@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpendSmart - Your Personal Finance Coach</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+    </script>
+    <style>
+        /* CSS RESET & BASE STYLES */
+        :root {
+            --bg-page: #F7F5F2;
+            --bg-card: #FFFFFF;
+            --primary-accent: #4FB79A;
+            --primary-accent-dark: #409d83;
+            --secondary-accent: #F5A98B;
+            --danger-accent: #e57373;
+            --danger-accent-dark: #d32f2f;
+            --text-dark: #333333;
+            --text-light: #6b7280;
+            --text-success: #34d399;
+            --text-danger: #ef4444;
+            --border-color: #E0E0E0;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --font-family: 'Inter', sans-serif;
+            --cat-food: #f97316;
+            --cat-rent: #3b82f6;
+            --cat-transport: #8b5cf6;
+            --cat-shopping: #ec4899;
+            --cat-bills: #14b8a6;
+            --cat-other: #6b7280;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        button {
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        /* AUTHENTICATION VIEW */
+        #auth-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px var(--shadow-color);
+            text-align: center;
+        }
+
+        .auth-container h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .auth-container h1 span {
+            color: var(--primary-accent);
+        }
+
+        .auth-toggle {
+            display: flex;
+            background-color: var(--bg-page);
+            border-radius: 8px;
+            padding: 4px;
+            margin: 1.5rem 0;
+        }
+        .auth-toggle button {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 6px;
+            background-color: transparent;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .auth-toggle button.active {
+            background-color: var(--bg-card);
+            color: var(--text-dark);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #fff;
+            color: var(--text-dark);
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(79, 183, 154, 0.2);
+        }
+        
+        .auth-button {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: var(--primary-accent);
+            color: #fff;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        .auth-button:hover {
+            background-color: var(--primary-accent-dark);
+        }
+
+        .error-message {
+            color: var(--danger-accent);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            text-align: left;
+            min-height: 1.2em;
+        }
+        
+        /* DASHBOARD VIEW */
+        #dashboard-view {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* SIDEBAR */
+        #sidebar {
+            width: 260px;
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .sidebar-header h2 span {
+            color: var(--primary-accent);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 0.75rem;
+            background-color: var(--bg-page);
+            border-radius: 8px;
+        }
+        .avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary-accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-right: 0.75rem;
+        }
+        #user-name-sidebar {
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .nav-menu {
+            flex-grow: 1;
+        }
+        .nav-item {
+            display: block;
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            text-align: left;
+            background-color: transparent;
+            color: var(--text-light);
+        }
+        .nav-item:hover {
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+        }
+        .nav-item.active {
+            background-color: var(--primary-accent);
+            color: white;
+        }
+
+        #logout-btn {
+            display: block;
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: left;
+            background-color: transparent;
+            color: var(--danger-accent);
+        }
+        #logout-btn:hover {
+            background-color: rgba(229, 115, 115, 0.1);
+        }
+
+        /* MAIN CONTENT */
+        #main-content {
+            flex-grow: 1;
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+
+        .content-header {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+        
+        .content-header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .month-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .month-nav button {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+        .month-nav button:hover {
+            background: var(--bg-page);
+        }
+        #current-month-display {
+            font-size: 1.25rem;
+            font-weight: 600;
+            min-width: 180px;
+            text-align: center;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .grid-col-span-2 {
+            grid-column: span 2;
+        }
+
+        /* BUDGET & EXPENSES (ANALYZER) */
+        .budget-summary-card {
+            padding: 1rem 1.5rem;
+        }
+        .budget-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .budget-summary-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.875rem;
+        }
+        .budget-summary-stats span {
+            font-weight: 600;
+            font-size: 1rem;
+            display: block;
+        }
+        .budget-summary-stats .spent { color: var(--text-danger); }
+        .budget-summary-stats .remaining { color: var(--text-success); }
+        
+        .budget-progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: var(--bg-page);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .budget-progress-inner {
+            height: 100%;
+            background-color: var(--primary-accent);
+            border-radius: 5px;
+            transition: width 0.5s ease-out;
+        }
+        
+        .secondary-button {
+             padding: 0.5rem 1rem;
+             background-color: var(--bg-page);
+             color: var(--text-dark);
+             border: 1px solid var(--border-color);
+             border-radius: 8px;
+             font-weight: 500;
+        }
+        .secondary-button:hover {
+            background-color: #e5e7eb;
+        }
+        .primary-button {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-accent);
+            color: white;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .primary-button:hover {
+            background-color: var(--primary-accent-dark);
+        }
+
+        .spending-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #add-expense-form {
+             display: grid;
+             grid-template-columns: 2fr 1fr 1fr 1fr auto;
+             gap: 1rem;
+             padding: 1.5rem 0;
+             border-bottom: 1px solid var(--bg-page);
+             margin-bottom: 1rem;
+             align-items: flex-end;
+        }
+        
+        #transactions-list-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .transaction-item {
+            display: grid;
+            grid-template-columns: 3fr 1fr 1fr;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--bg-page);
+            align-items: center;
+        }
+        .transaction-item:last-child { border-bottom: none; }
+        .transaction-desc { font-weight: 500; }
+        .transaction-cat { font-size: 0.8rem; color: var(--text-light); }
+        .transaction-date { font-size: 0.9rem; color: var(--text-light); }
+        .transaction-amount { font-weight: 600; color: var(--text-danger); text-align: right; }
+        
+        .pie-chart-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+        #pie-chart {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: var(--bg-page); /* Fallback */
+            flex-shrink: 0;
+        }
+        .pie-legend { list-style: none; }
+        .pie-legend li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .legend-color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 0.5rem;
+        }
+
+        .ai-advisor-card {
+            background: linear-gradient(45deg, var(--primary-accent), #3dbda1);
+            color: white;
+        }
+        .ai-advisor-card .card-title {
+            color: white;
+        }
+        
+        /* FINANCE COACH (CHATBOT) */
+        .chat-window {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .chat-message {
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            max-width: 80%;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        .bot-message {
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            border-bottom-left-radius: 2px;
+            align-self: flex-start;
+        }
+        .user-message {
+            background-color: var(--primary-accent);
+            color: white;
+            border-bottom-right-radius: 2px;
+            align-self: flex-end;
+        }
+        .chat-input-container {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+        }
+        .chat-input-container input {
+            flex-grow: 1;
+            border: none;
+            background: transparent;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .chat-input-container input:focus {
+            outline: none;
+        }
+        .chat-input-container button {
+            background-color: var(--primary-accent);
+            color: white;
+            padding: 0 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .chat-input-container button:hover {
+            background-color: var(--primary-accent-dark);
+        }
+        
+        /* WHAT IF SIMULATOR */
+        .scenario-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+        .scenario-selector button {
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+        }
+        .scenario-selector button.active {
+            background-color: var(--primary-accent);
+            color: white;
+        }
+        
+        .results-card {
+            display: flex;
+            gap: 1.5rem;
+            text-align: center;
+        }
+        .result-box {
+            flex: 1;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .result-box h4 {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+        .result-box .cost {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-accent);
+        }
+        .recommendation {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--bg-page);
+            border-radius: 8px;
+        }
+
+        /* RESPONSIVENESS */
+        @media (max-width: 1200px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+            .grid-col-span-2 {
+                grid-column: span 1;
+            }
+        }
+        @media (max-width: 768px) {
+            #dashboard-view {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+            #sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .user-profile, .nav-menu {
+                display: none; /* Simplification for mobile */
+            }
+            #main-content {
+                padding: 1.5rem;
+            }
+            .results-card, #add-expense-form {
+                flex-direction: column;
+                grid-template-columns: 1fr;
+            }
+            .content-header-controls {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .pie-chart-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- AUTHENTICATION VIEW -->
+    <div id="auth-view">
+        <div class="auth-container">
+            <h1>Spend<span>Smart</span></h1>
+            <div class="auth-toggle">
+                <button id="show-login-btn" class="active">Log In</button>
+                <button id="show-signup-btn">Create Account</button>
+            </div>
+            <form id="login-form">
+                <div class="form-group"><label for="login-email">Email</label><input type="email" id="login-email" required></div>
+                <div class="form-group"><label for="login-password">Password</label><input type="password" id="login-password" required></div>
+                <div id="login-error" class="error-message"></div>
+                <button type="submit" class="auth-button">Log In</button>
+            </form>
+            <form id="signup-form" class="hidden">
+                 <div class="form-group"><label for="signup-name">Name</label><input type="text" id="signup-name" required></div>
+                <div class="form-group"><label for="signup-email">Email</label><input type="email" id="signup-email" required></div>
+                <div class="form-group"><label for="signup-password">Password</label><input type="password" id="signup-password" required></div>
+                <div id="signup-error" class="error-message"></div>
+                <button type="submit" class="auth-button">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboard-view" class="hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div>
+                <div class="sidebar-header"><h2>Spend<span>Smart</span></h2></div>
+                <div class="user-profile">
+                    <div class="avatar-placeholder" id="avatar-initial"></div>
+                    <span id="user-name-sidebar"></span>
+                </div>
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-section="analyzer">Budget & Expenses</button>
+                    <button class="nav-item" data-section="coach">Finance Coach</button>
+                    <button class="nav-item" data-section="what-if">What-If Simulator</button>
+                </nav>
+            </div>
+            <button id="logout-btn">Sign Out</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content">
+            <!-- Spending Analyzer Section -->
+            <section id="analyzer-section" class="content-section active">
+                <div class="content-header-controls">
+                    <h3 class="content-header" style="margin: 0;">Budget & Expenses</h3>
+                    <div class="month-nav">
+                        <button id="prev-month-btn">&larr;</button>
+                        <span id="current-month-display"></span>
+                        <button id="next-month-btn">&rarr;</button>
+                    </div>
+                </div>
+
+                <div class="card budget-summary-card">
+                    <div class="budget-summary-header">
+                        <div class="budget-summary-stats">
+                            <div>Monthly Budget<span id="summary-budget">$0.00</span></div>
+                            <div>Spent This Month<span id="summary-spent" class="spent">$0.00</span></div>
+                            <div>Remaining<span id="summary-remaining" class="remaining">$0.00</span></div>
+                        </div>
+                        <button id="edit-budget-btn" class="secondary-button">Edit Budget</button>
+                    </div>
+                    <div class="budget-progress-bar"><div id="budget-progress-inner" class="budget-progress-inner"></div></div>
+                </div>
+
+                <div class="grid-container">
+                    <div class="card grid-col-span-2">
+                        <div class="spending-card-header">
+                            <h4 class="card-title">Your Spending</h4>
+                            <div>
+                                <button id="import-pdf-btn" class="secondary-button">Import from PDF</button>
+                                <button id="add-expense-toggle-btn" class="primary-button">+ Add Expense</button>
+                            </div>
+                        </div>
+                        <form id="add-expense-form" class="hidden">
+                            <div><input type="text" id="expense-desc" placeholder="Description" required></div>
+                            <div><input type="date" id="expense-date" required></div>
+                            <div><select id="expense-cat" required>
+                                <option value="" disabled selected>Category (AI will select)</option>
+                                <option value="Food">Food</option><option value="Rent">Rent</option><option value="Transport">Transport</option>
+                                <option value="Shopping">Shopping</option><option value="Bills">Bills</option><option value="Other">Other</option>
+                            </select></div>
+                            <div><input type="number" id="expense-amount" placeholder="Amount" required min="0.01" step="0.01"></div>
+                            <button type="submit" class="primary-button">Save</button>
+                        </form>
+                        <div id="pdf-import-section" class="hidden" style="padding: 1rem 0; display: flex; align-items: center; gap: 1rem;">
+                            <input type="file" id="pdf-file-input" accept="application/pdf">
+                            <button id="upload-pdf-btn" class="primary-button">Upload & Analyze</button>
+                            <span id="pdf-feedback" style="font-size: 0.875rem; color: var(--text-light);"></span>
+                        </div>
+                        <div id="transactions-list-container">
+                             <p id="no-transactions-msg">No spending recorded for this month.</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h4 class="card-title">Spending Breakdown</h4>
+                        <div class="pie-chart-container">
+                            <div id="pie-chart"></div>
+                            <ul id="pie-legend" class="pie-legend"></ul>
+                        </div>
+                        <p style="text-align: center; font-weight: 600; margin-top: 1rem;">Total Spent: <span id="breakdown-total-spent"></span></p>
+                    </div>
+                </div>
+
+                <div class="card ai-advisor-card">
+                    <h4 class="card-title">AI Advisor</h4>
+                    <p id="ai-advisor-text"></p>
+                </div>
+            </section>
+
+            <!-- Finance Coach Section -->
+            <section id="coach-section" class="content-section">
+                <h3 class="content-header">Finance Coach</h3>
+                 <div class="card" style="height: 70vh; display: flex; flex-direction: column; padding: 0;">
+                    <div id="chat-window" class="chat-window">
+                        <!-- Chat messages will be dynamically inserted here -->
+                    </div>
+                    <form id="chat-form" class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Ask about your spending, APR, savings..." autocomplete="off">
+                        <button type="submit">Send</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- What-If Simulator Section -->
+            <section id="what-if-section" class="content-section">
+                 <h3 class="content-header">What-If Simulator</h3>
+                 <div class="scenario-selector">
+                    <button class="secondary-button" data-scenario="car-vs-uber">Car vs Uber</button>
+                    <button class="secondary-button" data-scenario="rent-vs-buy">Rent vs Buy</button>
+                    <button class="secondary-button" data-scenario="loan">Loan Comparison</button>
+                 </div>
+
+                <div id="simulator-view-container">
+                     <p id="simulator-initial-msg" class="card" style="text-align: center; color: var(--text-light); padding: 3rem;">
+                        Select a scenario above to get started.
+                    </p>
+                     <!-- Car vs Uber Simulator -->
+                     <div id="car-vs-uber-sim" class="simulator-content hidden">
+                        <p style="margin-bottom: 2rem; max-width: 600px; color: var(--text-light);">Compare the long-term cost of owning a car versus relying on ride-sharing. Fill in your estimates below to see which makes more financial sense.</p>
+                        <div class="grid-container">
+                            <div class="card">
+                                <h4 class="card-title">Car vs Uber Estimates</h4>
+                                <form id="car-vs-uber-form">
+                                    <div class="grid-container"><div class="form-group"><label>Uber rides per week</label><input type="number" id="sim-uber-rides" value="5" required></div><div class="form-group"><label>Avg. cost per ride ($)</label><input type="number" id="sim-uber-cost" value="15" required></div><div class="form-group"><label>Car Price ($)</label><input type="number" id="sim-car-price" value="25000" required></div><div class="form-group"><label>Monthly Gas Cost ($)</label><input type="number" id="sim-gas" value="150" required></div><div class="form-group"><label>Monthly Insurance ($)</label><input type="number" id="sim-insurance" value="120" required></div><div class="form-group"><label>Monthly Maintenance ($)</label><input type="number" id="sim-maintenance" value="50" required></div><div class="form-group"><label>Timeframe (Years)</label><input type="number" id="sim-years" value="5" required></div></div>
+                                    <button type="submit" class="primary-button" style="margin-top: 1rem;">Run Comparison</button>
+                                </form>
+                            </div>
+                            <div class="card">
+                                <h4 class="card-title">Comparison Result</h4>
+                                <div id="car-sim-results-container" class="hidden">
+                                    <div class="results-card"><div class="result-box"><h4>Total Uber Cost</h4><p id="sim-uber-total" class="cost"></p><small id="sim-uber-monthly"></small></div><div class="result-box"><h4>Total Car Cost</h4><p id="sim-car-total" class="cost"></p><small id="sim-car-monthly"></small></div></div>
+                                    <div id="car-sim-recommendation" class="recommendation"></div>
+                                </div>
+                                <p id="car-sim-initial-msg">Run the comparison to see your results.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rent vs Buy Simulator -->
+                    <div id="rent-vs-buy-sim" class="simulator-content hidden">
+                        <p style="margin-bottom: 2rem; max-width: 600px; color: var(--text-light);">Decide between renting and buying a home by comparing the costs over time. Factor in appreciation, taxes, and maintenance.</p>
+                         <div class="grid-container">
+                            <div class="card">
+                                <h4 class="card-title">Rent vs Buy Estimates</h4>
+                                <form id="rent-vs-buy-form">
+                                    <div class="grid-container">
+                                        <div class="form-group"><label>Monthly Rent ($)</label><input type="number" id="sim-rent-monthly" value="2000" required></div>
+                                        <div class="form-group"><label>Home Price ($)</label><input type="number" id="sim-buy-price" value="400000" required></div>
+                                        <div class="form-group"><label>Down Payment (%)</label><input type="number" id="sim-buy-down" value="20" required></div>
+                                        <div class="form-group"><label>Interest Rate (%)</label><input type="number" step="0.01" id="sim-buy-interest" value="6.5" required></div>
+                                        <div class="form-group"><label>Property Tax (%/yr)</label><input type="number" step="0.01" id="sim-buy-tax" value="1.2" required></div>
+                                        <div class="form-group"><label>Maintenance ($/yr)</label><input type="number" id="sim-buy-maint" value="4000" required></div>
+                                        <div class="form-group"><label>Appreciation (%/yr)</label><input type="number" step="0.01" id="sim-buy-apprec" value="3" required></div>
+                                        <div class="form-group"><label>Timeframe (Years)</label><input type="number" id="sim-buy-years" value="10" required></div>
+                                    </div>
+                                    <button type="submit" class="primary-button" style="margin-top: 1rem;">Run Comparison</button>
+                                </form>
+                            </div>
+                            <div class="card">
+                                <h4 class="card-title">Comparison Result</h4>
+                                <div id="rent-sim-results-container" class="hidden">
+                                    <div class="results-card"><div class="result-box"><h4>Total Rent Cost</h4><p id="sim-rent-total" class="cost"></p></div><div class="result-box"><h4>Net Buy Cost</h4><p id="sim-buy-total" class="cost"></p><small>After selling</small></div></div>
+                                    <div id="rent-sim-recommendation" class="recommendation"></div>
+                                </div>
+                                <p id="rent-sim-initial-msg">Run the comparison to see your results.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loan Comparison Simulator -->
+                    <div id="loan-sim" class="simulator-content hidden">
+                        <p style="margin-bottom: 2rem; max-width: 600px; color: var(--text-light);">Compare two different loans to see which is better over the long run. Look at total interest paid and monthly payments.</p>
+                         <div class="grid-container">
+                            <div class="card">
+                                <h4 class="card-title">Loan Details</h4>
+                                <form id="loan-form">
+                                    <div class="form-group"><label>Loan Amount ($)</label><input type="number" id="sim-loan-amount" value="10000" required></div>
+                                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+                                    <h5 style="margin-bottom: 1rem;">Loan A</h5>
+                                    <div class="grid-container">
+                                        <div class="form-group"><label>Interest Rate (%)</label><input type="number" step="0.01" id="sim-loan-a-rate" value="5" required></div>
+                                        <div class="form-group"><label>Term (Years)</label><input type="number" id="sim-loan-a-term" value="5" required></div>
+                                    </div>
+                                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
+                                    <h5 style="margin-bottom: 1rem;">Loan B</h5>
+                                    <div class="grid-container">
+                                        <div class="form-group"><label>Interest Rate (%)</label><input type="number" step="0.01" id="sim-loan-b-rate" value="7" required></div>
+                                        <div class="form-group"><label>Term (Years)</label><input type="number" id="sim-loan-b-term" value="3" required></div>
+                                    </div>
+                                    <button type="submit" class="primary-button" style="margin-top: 1rem;">Run Comparison</button>
+                                </form>
+                            </div>
+                            <div class="card">
+                                 <h4 class="card-title">Comparison Result</h4>
+                                <div id="loan-sim-results-container" class="hidden">
+                                    <div class="results-card">
+                                        <div class="result-box"><h4>Loan A</h4><p id="loan-a-monthly" class="cost"></p><small id="loan-a-total-interest">Total Interest</small></div>
+                                        <div class="result-box"><h4>Loan B</h4><p id="loan-b-monthly" class="cost"></p><small id="loan-b-total-interest">Total Interest</small></div>
+                                    </div>
+                                    <div id="loan-sim-recommendation" class="recommendation"></div>
+                                </div>
+                                <p id="loan-sim-initial-msg">Run the comparison to see your results.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module">
+        import { GoogleGenAI } from "https://esm.run/@google/genai";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // ===================================
+            //  STATE & DOM ELEMENT SELECTORS
+            // ===================================
+            let currentUser = null;
+            let transactionsByMonth = {};
+            let budgetsByMonth = {};
+            let selectedDate = new Date();
+            
+            // Gemini AI Setup
+            let ai;
+            try {
+                ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            } catch (error) {
+                console.error("Failed to initialize GoogleGenAI. API_KEY might be missing.", error);
+                alert("Could not initialize AI features. Please ensure your API key is set up correctly.");
+            }
+
+
+            const authView = document.getElementById('auth-view');
+            const dashboardView = document.getElementById('dashboard-view');
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const showLoginBtn = document.getElementById('show-login-btn');
+            const showSignupBtn = document.getElementById('show-signup-btn');
+            const loginError = document.getElementById('login-error');
+            const signupError = document.getElementById('signup-error');
+            const logoutBtn = document.getElementById('logout-btn');
+            const userNameSidebar = document.getElementById('user-name-sidebar');
+            const avatarInitial = document.getElementById('avatar-initial');
+            const navItems = document.querySelectorAll('.nav-item');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            // Finance Coach (Chatbot) Elements
+            const chatWindow = document.getElementById('chat-window');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            let coachInitialized = false;
+
+            // Budget & Expenses Elements
+            const prevMonthBtn = document.getElementById('prev-month-btn');
+            const nextMonthBtn = document.getElementById('next-month-btn');
+            const currentMonthDisplay = document.getElementById('current-month-display');
+            const summaryBudget = document.getElementById('summary-budget');
+            const summarySpent = document.getElementById('summary-spent');
+            const summaryRemaining = document.getElementById('summary-remaining');
+            const editBudgetBtn = document.getElementById('edit-budget-btn');
+            const budgetProgressBar = document.getElementById('budget-progress-inner');
+            const addExpenseToggleBtn = document.getElementById('add-expense-toggle-btn');
+            const addExpenseForm = document.getElementById('add-expense-form');
+            const expenseDescInput = document.getElementById('expense-desc');
+            const expenseDateInput = document.getElementById('expense-date');
+            const expenseCatSelect = document.getElementById('expense-cat');
+            const transactionsListContainer = document.getElementById('transactions-list-container');
+            const noTransactionsMsg = document.getElementById('no-transactions-msg');
+            const pieChartEl = document.getElementById('pie-chart');
+            const pieLegendEl = document.getElementById('pie-legend');
+            const breakdownTotalSpent = document.getElementById('breakdown-total-spent');
+            const aiAdvisorText = document.getElementById('ai-advisor-text');
+            const importPdfBtn = document.getElementById('import-pdf-btn');
+            const pdfImportSection = document.getElementById('pdf-import-section');
+            const pdfFileInput = document.getElementById('pdf-file-input');
+            const uploadPdfBtn = document.getElementById('upload-pdf-btn');
+            const pdfFeedback = document.getElementById('pdf-feedback');
+            
+            const CATEGORIES = ["Food", "Rent", "Transport", "Shopping", "Bills", "Other"];
+            const CATEGORY_COLORS = { Food: 'var(--cat-food)', Rent: 'var(--cat-rent)', Transport: 'var(--cat-transport)', Shopping: 'var(--cat-shopping)', Bills: 'var(--cat-bills)', Other: 'var(--cat-other)' };
+
+            // What-If Simulator Elements
+            const scenarioSelectorBtns = document.querySelectorAll('.scenario-selector button');
+            const simulatorContents = document.querySelectorAll('.simulator-content');
+            const simulatorInitialMsg = document.getElementById('simulator-initial-msg');
+
+            // ===================================
+            //  HELPER FUNCTIONS
+            // ===================================
+            const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+            const getMonthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const getStorageKey = (base) => `${base}_${currentUser.email}`;
+            
+            // ===================================
+            //  DATA PERSISTENCE
+            // ===================================
+            function loadData() {
+                transactionsByMonth = JSON.parse(localStorage.getItem(getStorageKey('transactionsByMonth'))) || {};
+                budgetsByMonth = JSON.parse(localStorage.getItem(getStorageKey('budgetsByMonth'))) || {};
+            }
+
+            function saveData() {
+                localStorage.setItem(getStorageKey('transactionsByMonth'), JSON.stringify(transactionsByMonth));
+                localStorage.setItem(getStorageKey('budgetsByMonth'), JSON.stringify(budgetsByMonth));
+            }
+
+            // ===================================
+            //  AUTHENTICATION
+            // ===================================
+            function initAuth() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                let userProfile = null;
+                try {
+                    userProfile = JSON.parse(localStorage.getItem('userProfile'));
+                } catch(e) {
+                    // Malformed userProfile, treat as logged out
+                }
+
+
+                if (isLoggedIn && userProfile) {
+                    currentUser = userProfile;
+                    loadData();
+                    showDashboard();
+                } else {
+                    showAuthView();
+                }
+            }
+            
+            function showDashboard() {
+                authView.classList.add('hidden');
+                dashboardView.classList.remove('hidden');
+                userNameSidebar.textContent = currentUser.name;
+                avatarInitial.textContent = currentUser.name.charAt(0).toUpperCase();
+                updateDashboardForMonth();
+            }
+
+            function showAuthView() {
+                dashboardView.classList.add('hidden');
+                authView.classList.remove('hidden');
+                currentUser = null;
+                localStorage.removeItem('isLoggedIn');
+            }
+
+            showLoginBtn.addEventListener('click', () => { loginForm.classList.remove('hidden'); signupForm.classList.add('hidden'); showLoginBtn.classList.add('active'); showSignupBtn.classList.remove('active'); });
+            showSignupBtn.addEventListener('click', () => { loginForm.classList.add('hidden'); signupForm.classList.remove('hidden'); showLoginBtn.classList.remove('active'); showSignupBtn.classList.add('active'); });
+            
+            signupForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                
+                const user = { name, email, password };
+                localStorage.setItem('userProfile', JSON.stringify(user));
+                localStorage.setItem('isLoggedIn', 'true');
+                currentUser = user;
+                loadData();
+                showDashboard();
+            });
+            
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const storedUser = JSON.parse(localStorage.getItem('userProfile'));
+
+                if (storedUser && storedUser.email === email && storedUser.password === password) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    currentUser = storedUser;
+                    loadData();
+                    showDashboard();
+                } else {
+                    loginError.textContent = 'Invalid email or password.';
+                }
+            });
+
+            logoutBtn.addEventListener('click', showAuthView);
+
+
+            // ===================================
+            //  BUDGET & EXPENSES DASHBOARD LOGIC
+            // ===================================
+
+            function updateDashboardForMonth() {
+                const monthKey = getMonthKey(selectedDate);
+                const budget = budgetsByMonth[monthKey] || 0;
+                const transactions = transactionsByMonth[monthKey] || [];
+
+                const totalSpent = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+                const remaining = budget - totalSpent;
+                const spendingByCategory = transactions.reduce((acc, tx) => {
+                    acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+                    return acc;
+                }, {});
+
+                renderMonthHeader();
+                renderBudgetSummary(budget, totalSpent, remaining);
+                renderTransactionList(transactions);
+                renderPieChart(spendingByCategory, totalSpent);
+                renderAIAdvisor(budget, totalSpent, spendingByCategory);
+            }
+
+            function renderMonthHeader() {
+                currentMonthDisplay.textContent = selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            }
+
+            function renderBudgetSummary(budget, spent, remaining) {
+                summaryBudget.textContent = formatCurrency(budget);
+                summarySpent.textContent = formatCurrency(spent);
+                summaryRemaining.textContent = formatCurrency(remaining);
+                summaryRemaining.style.color = remaining >= 0 ? 'var(--text-success)' : 'var(--text-danger)';
+                const progress = budget > 0 ? (spent / budget) * 100 : 0;
+                budgetProgressBar.style.width = `${Math.min(progress, 100)}%`;
+            }
+
+            function renderTransactionList(transactions) {
+                transactionsListContainer.innerHTML = '';
+                if (transactions.length === 0) {
+                    transactionsListContainer.appendChild(noTransactionsMsg);
+                    noTransactionsMsg.classList.remove('hidden');
+                    return;
+                }
+                noTransactionsMsg.classList.add('hidden');
+
+                const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+                sorted.forEach(tx => {
+                    const item = document.createElement('div');
+                    item.className = 'transaction-item';
+                    item.innerHTML = `
+                        <div>
+                            <div class="transaction-desc">${tx.description}</div>
+                            <div class="transaction-cat">${tx.category}</div>
+                        </div>
+                        <div class="transaction-date">${tx.date}</div>
+                        <div class="transaction-amount">-${formatCurrency(tx.amount)}</div>
+                    `;
+                    transactionsListContainer.appendChild(item);
+                });
+            }
+
+            function renderPieChart(spendingByCategory, totalSpent) {
+                pieLegendEl.innerHTML = '';
+                breakdownTotalSpent.textContent = formatCurrency(totalSpent);
+                if (totalSpent === 0) {
+                    pieChartEl.style.background = 'var(--bg-page)';
+                    return;
+                }
+                
+                let gradientString = 'conic-gradient(';
+                let currentPercentage = 0;
+                const sortedCategories = Object.entries(spendingByCategory).sort((a,b) => b[1] - a[1]);
+
+                sortedCategories.forEach(([category, amount]) => {
+                    const percentage = (amount / totalSpent) * 100;
+                    const color = CATEGORY_COLORS[category] || 'var(--cat-other)';
+                    
+                    gradientString += `${color} ${currentPercentage}% ${currentPercentage + percentage}%, `;
+                    currentPercentage += percentage;
+
+                    const legendItem = document.createElement('li');
+                    legendItem.innerHTML = `<div class="legend-color-box" style="background-color: ${color};"></div>${category}: ${formatCurrency(amount)}`;
+                    pieLegendEl.appendChild(legendItem);
+                });
+
+                pieChartEl.style.background = gradientString.slice(0, -2) + ')';
+            }
+
+            function renderAIAdvisor(budget, totalSpent, spendingByCategory) {
+                if (totalSpent === 0) {
+                    aiAdvisorText.textContent = "Start by adding your first expense for this month to get personalized advice.";
+                    return;
+                }
+                if (budget === 0) {
+                    aiAdvisorText.textContent = "Set a monthly budget to unlock helpful insights on your spending habits.";
+                    return;
+                }
+                
+                const spendingRatio = totalSpent / budget;
+                let advice = [];
+                
+                if (spendingRatio > 1) {
+                    advice.push(`You've gone over your budget by ${formatCurrency(totalSpent - budget)}. It's a good time to review your spending.`);
+                } else if (spendingRatio >= 0.9) {
+                    advice.push(`You’re very close to your budget limit. Be mindful of any further expenses this month.`);
+                } else if (spendingRatio < 0.7) {
+                    advice.push(`Great job staying well under your budget! You're on track to save ${formatCurrency(budget - totalSpent)} this month.`);
+                }
+
+                const highestCat = Object.keys(spendingByCategory).reduce((a, b) => spendingByCategory[a] > spendingByCategory[b] ? a : b, null);
+                if (highestCat && spendingByCategory[highestCat] / totalSpent > 0.4) {
+                    advice.push(`Your spending on ${highestCat} is a significant part of your total. See if there are ways to optimize it.`);
+                }
+                
+                aiAdvisorText.textContent = advice.length > 0 ? advice.join(' ') : "Your spending looks balanced. Keep up the great work!";
+            }
+            
+            async function getCategoryFromAI(description) {
+                if (!ai) return "Other";
+                try {
+                    const prompt = `Categorize the following expense description into one of these exact categories: ${CATEGORIES.join(', ')}. Respond with ONLY the category name. Do not add any other text or punctuation. Description: "${description}"`;
+                    
+                    const response = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: prompt,
+                    });
+
+                    const category = response.text.trim();
+                    return CATEGORIES.includes(category) ? category : "Other";
+                } catch (error) {
+                    console.error("AI Categorization Error:", error);
+                    return "Other"; // Fallback category
+                }
+            }
+
+
+            // Event Listeners for Budget & Expenses
+            prevMonthBtn.addEventListener('click', () => { selectedDate.setMonth(selectedDate.getMonth() - 1); updateDashboardForMonth(); });
+            nextMonthBtn.addEventListener('click', () => { selectedDate.setMonth(selectedDate.getMonth() + 1); updateDashboardForMonth(); });
+            
+            editBudgetBtn.addEventListener('click', () => {
+                const monthKey = getMonthKey(selectedDate);
+                const currentBudget = budgetsByMonth[monthKey] || 0;
+                const newBudget = prompt('Enter new budget for this month:', currentBudget);
+                if (newBudget !== null && !isNaN(parseFloat(newBudget)) && parseFloat(newBudget) >= 0) {
+                    budgetsByMonth[monthKey] = parseFloat(newBudget);
+                    saveData();
+                    updateDashboardForMonth();
+                }
+            });
+            
+            addExpenseToggleBtn.addEventListener('click', () => {
+                 addExpenseForm.classList.toggle('hidden');
+                 expenseDateInput.valueAsDate = new Date();
+            });
+
+            expenseDescInput.addEventListener('blur', async () => {
+                const description = expenseDescInput.value.trim();
+                if (description) {
+                    expenseCatSelect.disabled = true;
+                    const originalOption = expenseCatSelect.querySelector('option[value=""]');
+                    originalOption.textContent = 'AI is categorizing...';
+                    
+                    const category = await getCategoryFromAI(description);
+                    
+                    expenseCatSelect.value = category;
+                    expenseCatSelect.disabled = false;
+                    originalOption.textContent = 'Category (AI will select)';
+                }
+            });
+
+            addExpenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const desc = document.getElementById('expense-desc').value;
+                const date = document.getElementById('expense-date').value;
+                const category = document.getElementById('expense-cat').value;
+                const amount = parseFloat(document.getElementById('expense-amount').value);
+
+                if (!desc || !date || !category || isNaN(amount) || amount <= 0) return;
+                
+                const transaction = { description: desc, date, category, amount };
+                const monthKey = getMonthKey(new Date(date + 'T00:00:00'));
+                
+                if (!transactionsByMonth[monthKey]) transactionsByMonth[monthKey] = [];
+                transactionsByMonth[monthKey].push(transaction);
+                
+                saveData();
+                addExpenseForm.reset();
+                addExpenseForm.classList.add('hidden');
+                updateDashboardForMonth();
+            });
+            
+            importPdfBtn.addEventListener('click', () => pdfImportSection.classList.toggle('hidden'));
+            
+            uploadPdfBtn.addEventListener('click', () => {
+                if (!pdfFileInput.files.length) {
+                    pdfFeedback.textContent = 'Please select a PDF file first.';
+                    return;
+                }
+                const file = pdfFileInput.files[0];
+                const fileReader = new FileReader();
+
+                uploadPdfBtn.disabled = true;
+                uploadPdfBtn.textContent = 'Reading PDF...';
+                pdfFeedback.textContent = '';
+                
+                fileReader.onload = async function() {
+                    try {
+                        const typedarray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let fullText = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            fullText += content.items.map(item => item.str).join('\n');
+                        }
+
+                        // Regex to find potential transactions in a bank statement
+                        const transactionRegex = /^(?:\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?)\s+(.*?)\s+(?:-?\$?(\d{1,3}(?:,\d{3})*\.\d{2}))/gm;
+                        let match;
+                        const potentialTransactions = [];
+                        while ((match = transactionRegex.exec(fullText)) !== null) {
+                            // This is the place where you capture parts of the matched string
+                            const dateStr = match[0].match(/^\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?/)[0];
+                            const description = match[1].trim();
+                            const amount = parseFloat(match[2].replace(/,/g, ''));
+                             potentialTransactions.push({ date: new Date(dateStr), description, amount });
+                        }
+                        
+                        if (potentialTransactions.length === 0) {
+                             pdfFeedback.textContent = 'Could not find any transactions in this statement.';
+                             pdfFeedback.style.color = 'var(--text-danger)';
+                             return;
+                        }
+
+                        uploadPdfBtn.textContent = `Categorizing ${potentialTransactions.length} items...`;
+                        
+                        const descriptionsToCategorize = potentialTransactions.map(t => t.description);
+                        const prompt = `You are an expert financial transaction categorizer. Based on the provided list of transaction descriptions, categorize each one into a single, most appropriate category from the following list: ${CATEGORIES.join(', ')}. Respond with ONLY a valid JSON array of objects. Each object must have an "original_description" key (with the exact string I provided) and a "category" key (with your chosen category). Descriptions to categorize: ${JSON.stringify(descriptionsToCategorize)}`;
+
+                        const response = await ai.models.generateContent({
+                            model: 'gemini-2.5-flash',
+                            contents: prompt,
+                            config: { responseMimeType: "application/json" }
+                        });
+                        
+                        const categorizedResults = JSON.parse(response.text);
+                        const categoryMap = new Map(categorizedResults.map(item => [item.original_description, item.category]));
+
+                        let newTransactionsCount = 0;
+                        potentialTransactions.forEach(tx => {
+                            const category = categoryMap.get(tx.description) || 'Other';
+                            const dateString = tx.date.toISOString().split('T')[0];
+                            const monthKey = getMonthKey(tx.date);
+                            
+                            const transaction = {
+                                date: dateString,
+                                description: tx.description,
+                                category: category,
+                                amount: tx.amount
+                            };
+
+                            if (!transactionsByMonth[monthKey]) transactionsByMonth[monthKey] = [];
+                            transactionsByMonth[monthKey].push(transaction);
+                            newTransactionsCount++;
+                        });
+
+                        if (newTransactionsCount > 0) {
+                            saveData();
+                            updateDashboardForMonth();
+                            pdfFeedback.textContent = `Success! ${newTransactionsCount} transactions imported.`;
+                            pdfFeedback.style.color = 'var(--text-success)';
+                        }
+
+                    } catch (error) {
+                        console.error("Error processing PDF:", error);
+                        pdfFeedback.textContent = 'Error analyzing PDF. The format might be unsupported.';
+                        pdfFeedback.style.color = 'var(--text-danger)';
+                    } finally {
+                        uploadPdfBtn.disabled = false;
+                        uploadPdfBtn.textContent = 'Upload & Analyze';
+                        pdfFileInput.value = '';
+                        setTimeout(() => { 
+                            pdfImportSection.classList.add('hidden');
+                            pdfFeedback.textContent = '';
+                        }, 5000);
+                    }
+                };
+                fileReader.readAsArrayBuffer(file);
+            });
+
+
+            // ===================================
+            //  FINANCE COACH (AI CHATBOT)
+            // ===================================
+            function addChatMessage(sender, message) {
+                const messageEl = document.createElement('div');
+                messageEl.className = `chat-message ${sender}-message`;
+                messageEl.textContent = message;
+                chatWindow.appendChild(messageEl);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+                return messageEl;
+            }
+
+            async function getBotResponse(userInput) {
+                if (!ai) {
+                    addChatMessage('bot', 'AI features are not available. Please check your API key.');
+                    return;
+                }
+                const thinkingMessage = addChatMessage('bot', 'Thinking...');
+                
+                try {
+                    const monthKey = getMonthKey(selectedDate);
+                    const transactions = transactionsByMonth[monthKey] || [];
+                    const budget = budgetsByMonth[monthKey] || 0;
+                    
+                    let financialContext = "The user has not recorded any financial data for this month.";
+                    if (transactions.length > 0) {
+                        const totalSpent = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+                        const spendingByCategory = transactions.reduce((acc, tx) => {
+                            acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
+                            return acc;
+                        }, {});
+
+                        financialContext = `
+                            Here is my financial summary for the current month:
+                            - Monthly Budget: ${formatCurrency(budget)}
+                            - Total Spent: ${formatCurrency(totalSpent)}
+                            - Spending Breakdown: ${Object.entries(spendingByCategory).map(([cat, amt]) => `${cat}: ${formatCurrency(amt)}`).join(', ')}
+                        `;
+                    }
+
+                    const prompt = `
+                        You are SpendSmart, a friendly and insightful AI finance coach. 
+                        Your tone should be encouraging, clear, and helpful. Avoid financial jargon.
+                        Keep your answers concise (2-4 sentences).
+                        Based on the following financial context, answer my question.
+
+                        My Financial Context:
+                        ${financialContext}
+
+                        My Question: "${userInput}"
+
+                        Your Answer:
+                    `;
+                    
+                    const response = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: prompt,
+                    });
+
+                    thinkingMessage.textContent = response.text;
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    thinkingMessage.textContent = "Sorry, I'm having trouble connecting right now. Please check your API key or try again in a moment.";
+                    thinkingMessage.style.color = 'var(--text-danger)';
+                }
+            }
+
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userInput = chatInput.value.trim();
+                if (userInput) {
+                    addChatMessage('user', userInput);
+                    chatInput.value = '';
+                    getBotResponse(userInput);
+                }
+            });
+
+            function initializeCoach() {
+                if (!coachInitialized) {
+                    chatWindow.innerHTML = '';
+                    setTimeout(() => {
+                        addChatMessage('bot', `Hi ${currentUser.name}! I'm your AI Finance Coach. Ask me for advice on your current month's spending, or general topics like saving or credit scores.`);
+                    }, 500);
+                    coachInitialized = true;
+                }
+            }
+
+
+            // ===================================
+            //  SIDEBAR & WHAT-IF SIMULATOR
+            // ===================================
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    const sectionId = item.dataset.section + '-section';
+                    contentSections.forEach(section => section.classList.toggle('active', section.id === sectionId));
+                    if (item.dataset.section === 'coach') {
+                        initializeCoach();
+                    }
+                });
+            });
+
+            // What-If Scenario Switching
+            scenarioSelectorBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Hide initial message
+                    simulatorInitialMsg.classList.add('hidden');
+
+                    // Handle active button state
+                    scenarioSelectorBtns.forEach(b => {
+                        b.classList.remove('primary-button', 'active');
+                        b.classList.add('secondary-button');
+                    });
+                    btn.classList.add('primary-button', 'active');
+                    btn.classList.remove('secondary-button');
+
+                    // Show the correct simulator content
+                    const targetScenario = btn.dataset.scenario;
+                    simulatorContents.forEach(content => {
+                        content.classList.toggle('hidden', content.id !== `${targetScenario}-sim`);
+                    });
+                });
+            });
+
+            // Car vs Uber Logic
+            document.getElementById('car-vs-uber-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const rides = parseFloat(document.getElementById('sim-uber-rides').value);
+                const cost = parseFloat(document.getElementById('sim-uber-cost').value);
+                const carPrice = parseFloat(document.getElementById('sim-car-price').value);
+                const gas = parseFloat(document.getElementById('sim-gas').value);
+                const insurance = parseFloat(document.getElementById('sim-insurance').value);
+                const maintenance = parseFloat(document.getElementById('sim-maintenance').value);
+                const years = parseFloat(document.getElementById('sim-years').value);
+
+                const monthlyUber = rides * cost * 4.33;
+                const totalUber = monthlyUber * 12 * years;
+                const monthlyCar = (carPrice / (years * 12)) + gas + insurance + maintenance;
+                const totalCar = monthlyCar * 12 * years;
+                
+                document.getElementById('sim-uber-total').textContent = formatCurrency(totalUber);
+                document.getElementById('sim-uber-monthly').textContent = `${formatCurrency(monthlyUber)} / month`;
+                document.getElementById('sim-car-total').textContent = formatCurrency(totalCar);
+                document.getElementById('sim-car-monthly').textContent = `${formatCurrency(monthlyCar)} / month`;
+                document.getElementById('car-sim-recommendation').innerHTML = totalUber < totalCar ? `<strong>Recommendation:</strong> Using <strong>Uber is cheaper</strong> by ${formatCurrency(totalCar - totalUber)} over ${years} years.` : `<strong>Recommendation:</strong> <strong>Owning a car is cheaper</strong> by ${formatCurrency(totalUber - totalCar)} over ${years} years.`;
+                document.getElementById('car-sim-results-container').classList.remove('hidden');
+                document.getElementById('car-sim-initial-msg').classList.add('hidden');
+            });
+
+            // Rent vs Buy Logic
+            document.getElementById('rent-vs-buy-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const monthlyRent = parseFloat(document.getElementById('sim-rent-monthly').value);
+                const homePrice = parseFloat(document.getElementById('sim-buy-price').value);
+                const downPaymentPercent = parseFloat(document.getElementById('sim-buy-down').value);
+                const interestRate = parseFloat(document.getElementById('sim-buy-interest').value);
+                const taxRate = parseFloat(document.getElementById('sim-buy-tax').value);
+                const maintenance = parseFloat(document.getElementById('sim-buy-maint').value);
+                const appreciationRate = parseFloat(document.getElementById('sim-buy-apprec').value);
+                const years = parseFloat(document.getElementById('sim-buy-years').value);
+
+                const totalRentCost = monthlyRent * 12 * years;
+
+                const downPayment = homePrice * (downPaymentPercent / 100);
+                const loanAmount = homePrice - downPayment;
+                const monthlyInterest = interestRate / 100 / 12;
+                const numPayments = years * 12;
+                const mortgagePayment = loanAmount * (monthlyInterest * Math.pow(1 + monthlyInterest, numPayments)) / (Math.pow(1 + monthlyInterest, numPayments) - 1);
+                
+                const totalMortgage = mortgagePayment * numPayments;
+                const totalTax = (homePrice * (taxRate / 100)) * years;
+                const totalMaintenance = maintenance * years;
+                const totalBuyCost = downPayment + totalMortgage + totalTax + totalMaintenance;
+
+                const futureHomeValue = homePrice * Math.pow(1 + appreciationRate / 100, years);
+                const netBuyCost = totalBuyCost - futureHomeValue;
+                
+                document.getElementById('sim-rent-total').textContent = formatCurrency(totalRentCost);
+                document.getElementById('sim-buy-total').textContent = formatCurrency(netBuyCost);
+                document.getElementById('rent-sim-recommendation').innerHTML = totalRentCost < netBuyCost ? `<strong>Recommendation:</strong> <strong>Renting is cheaper</strong> by ${formatCurrency(netBuyCost - totalRentCost)} over ${years} years.` : `<strong>Recommendation:</strong> <strong>Buying is cheaper</strong> by ${formatCurrency(totalRentCost - netBuyCost)} over ${years} years, considering equity gained.`;
+                document.getElementById('rent-sim-results-container').classList.remove('hidden');
+                document.getElementById('rent-sim-initial-msg').classList.add('hidden');
+            });
+            
+            // Loan Comparison Logic
+            document.getElementById('loan-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const loanAmount = parseFloat(document.getElementById('sim-loan-amount').value);
+                const rateA = parseFloat(document.getElementById('sim-loan-a-rate').value);
+                const termA = parseFloat(document.getElementById('sim-loan-a-term').value);
+                const rateB = parseFloat(document.getElementById('sim-loan-b-rate').value);
+                const termB = parseFloat(document.getElementById('sim-loan-b-term').value);
+
+                const calculateLoan = (principal, annualRate, years) => {
+                    const monthlyRate = annualRate / 100 / 12;
+                    const numPayments = years * 12;
+                    const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+                    const totalPaid = monthlyPayment * numPayments;
+                    const totalInterest = totalPaid - principal;
+                    return { monthlyPayment, totalInterest };
+                };
+                
+                const loanA = calculateLoan(loanAmount, rateA, termA);
+                const loanB = calculateLoan(loanAmount, rateB, termB);
+                
+                document.getElementById('loan-a-monthly').textContent = `${formatCurrency(loanA.monthlyPayment)}/mo`;
+                document.getElementById('loan-a-total-interest').textContent = `${formatCurrency(loanA.totalInterest)} total interest`;
+                document.getElementById('loan-b-monthly').textContent = `${formatCurrency(loanB.monthlyPayment)}/mo`;
+                document.getElementById('loan-b-total-interest').textContent = `${formatCurrency(loanB.totalInterest)} total interest`;
+                
+                let recommendation = `Loan A has a lower monthly payment, but you'll pay more interest over time. Loan B has a higher payment but costs less overall. `;
+                if(loanA.totalInterest < loanB.totalInterest) {
+                    recommendation += '<strong>Loan A is the cheaper option</strong> in the long run.';
+                } else {
+                    recommendation += '<strong>Loan B is the cheaper option</strong> in the long run.';
+                }
+                document.getElementById('loan-sim-recommendation').innerHTML = recommendation;
+                document.getElementById('loan-sim-results-container').classList.remove('hidden');
+                document.getElementById('loan-sim-initial-msg').classList.add('hidden');
+            });
+
+
+            initAuth();
+        });
+    </script>
+</body>
+</html>
