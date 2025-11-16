@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SpendSmart - Your Personal Finance Coach</title>
+    <title>Finova - Your Personal Finance Coach</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
     </script>
@@ -402,16 +403,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 1rem;
         }
         
-        #add-expense-form {
-             display: grid;
-             grid-template-columns: 2fr 1fr 1fr 1fr auto;
-             gap: 1rem;
-             padding: 1.5rem 0;
-             border-bottom: 1px solid var(--bg-page);
-             margin-bottom: 1rem;
-             align-items: flex-end;
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-accent);
+        }
+        .checkbox-group label {
+            font-weight: 500;
         }
         
         #transactions-list-container {
@@ -420,16 +426,29 @@
         }
         .transaction-item {
             display: grid;
-            grid-template-columns: 3fr 1fr 1fr;
+            grid-template-columns: 3fr 1fr 1fr auto;
             padding: 0.75rem 0;
             border-bottom: 1px solid var(--bg-page);
             align-items: center;
+            gap: 0.5rem;
         }
         .transaction-item:last-child { border-bottom: none; }
         .transaction-desc { font-weight: 500; }
         .transaction-cat { font-size: 0.8rem; color: var(--text-light); }
-        .transaction-date { font-size: 0.9rem; color: var(--text-light); }
+        .transaction-date { font-size: 0.9rem; color: var(--text-light); text-align: right; }
         .transaction-amount { font-weight: 600; color: var(--text-danger); text-align: right; }
+        .delete-tx-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+        .delete-tx-btn:hover {
+            background-color: var(--bg-page);
+            color: var(--danger-accent);
+        }
         
         .pie-chart-container {
             display: flex;
@@ -464,8 +483,36 @@
         .ai-advisor-card .card-title {
             color: white;
         }
+        #ai-advisor-text ul {
+            list-style-position: inside;
+            padding-left: 0.5rem;
+        }
+        #ai-advisor-text li {
+            margin-bottom: 0.5rem;
+        }
         
         /* FINANCE COACH (CHATBOT) */
+        .chat-suggestions {
+            display: flex;
+            justify-content: flex-start;
+            gap: 0.75rem;
+            padding: 0;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        .chat-suggestions button {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        .chat-suggestions button:hover {
+            background-color: var(--bg-page);
+        }
+        
         .chat-window {
             flex-grow: 1;
             overflow-y: auto;
@@ -486,6 +533,24 @@
             color: var(--text-dark);
             border-bottom-left-radius: 2px;
             align-self: flex-start;
+            line-height: 1.6;
+        }
+        .bot-message h3, .simulator-results-content h3 {
+             font-size: 1.1em;
+             margin-top: 1em;
+             margin-bottom: 0.5em;
+        }
+        .bot-message h2, .simulator-results-content h2 {
+             font-size: 1.2em;
+             margin-top: 1.2em;
+             margin-bottom: 0.6em;
+        }
+        .bot-message ul, .bot-message ol, .simulator-results-content ul, .simulator-results-content ol, .simulation-chat-messages ul {
+             padding-left: 1.5em;
+             margin: 0.5em 0;
+        }
+        .bot-message p, .simulator-results-content p {
+            margin-bottom: 1em;
         }
         .user-message {
             background-color: var(--primary-accent);
@@ -495,20 +560,27 @@
         }
         .chat-input-container {
             display: flex;
-            gap: 0.5rem;
-            padding-top: 1rem;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 1rem;
             margin-top: auto;
             border-top: 1px solid var(--border-color);
         }
-        .chat-input-container input {
+        .chat-input-wrapper {
+            display: flex;
+            width: 100%;
+            gap: 0.5rem;
+        }
+        #chat-input {
             flex-grow: 1;
             border: none;
             background: transparent;
             padding: 0.75rem;
             font-size: 1rem;
             font-family: inherit;
+            color: var(--text-dark); /* Ensure user input text is black */
         }
-        .chat-input-container input:focus {
+        #chat-input:focus {
             outline: none;
         }
         .chat-input-container button {
@@ -523,49 +595,309 @@
         }
         
         /* WHAT IF SIMULATOR */
-        .scenario-selector {
+        .scenario-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
             display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
+            flex-direction: column;
         }
-        .scenario-selector button {
-            background-color: var(--bg-page);
-            color: var(--text-dark);
+        .scenario-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
-        .scenario-selector button.active {
-            background-color: var(--primary-accent);
-            color: white;
+        .scenario-card h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .scenario-card p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            flex-grow: 1;
+            margin-bottom: 1rem;
+        }
+        .card-accent-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+        .card-button-area {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--primary-accent);
+            margin-top: auto;
         }
         
-        .results-card {
+        .modal-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
             display: flex;
-            gap: 1.5rem;
-            text-align: center;
-        }
-        .result-box {
-            flex: 1;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .result-box h4 {
-            font-size: 1rem;
-            color: var(--text-light);
-            margin-bottom: 0.5rem;
-        }
-        .result-box .cost {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--primary-accent);
-        }
-        .recommendation {
-            margin-top: 1.5rem;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
             padding: 1rem;
-            background-color: var(--bg-page);
-            border-radius: 8px;
         }
+        
+        .modal-close-button {
+            background: transparent;
+            border: none;
+            font-size: 1.75rem;
+            font-weight: 400;
+            line-height: 1;
+            color: var(--text-dark);
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+        .modal-close-button:hover {
+            opacity: 1;
+        }
+
+        .simulator-results-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        .simulator-results-content th, .simulator-results-content td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            text-align: left;
+        }
+        .simulator-results-content th {
+            background-color: var(--bg-page);
+        }
+        .simulation-choice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .simulation-choice-buttons button {
+            padding: 1rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+        }
+         .simulation-choice-buttons button strong {
+            font-size: 1.1rem;
+            font-weight: 600;
+         }
+         .simulation-choice-buttons button span {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+         }
+
+
+        /* FLOATING CHAT WIDGET */
+        #finley-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--primary-accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 998;
+            border: none;
+            transition: transform 0.2s ease-in-out;
+        }
+        #finley-fab:hover {
+            background-color: var(--primary-accent-dark);
+            transform: scale(1.1);
+        }
+        #finley-fab svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        #finley-mini-chat {
+            position: fixed;
+            bottom: 96px;
+            right: 24px;
+            width: 350px;
+            max-width: calc(100vw - 48px);
+            height: 450px;
+            max-height: calc(100vh - 120px);
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 999;
+            transform-origin: bottom right;
+            transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out, height 0.2s ease-in-out;
+        }
+        #finley-mini-chat.hidden {
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #finley-mini-chat.minimized {
+            height: auto;
+            width: 280px;
+        }
+        #finley-mini-chat.minimized .mini-chat-messages,
+        #finley-mini-chat.minimized .mini-chat-form,
+        #finley-mini-chat.minimized #mini-chat-expand-btn {
+            display: none;
+        }
+
+        .mini-chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: var(--bg-page);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+            cursor: grab;
+            user-select: none;
+        }
+        .mini-chat-header.dragging {
+            cursor: grabbing;
+        }
+        .mini-chat-header h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        .mini-chat-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .mini-chat-header-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mini-chat-header-btn:hover {
+            color: var(--text-dark);
+        }
+        #mini-chat-close-btn {
+            font-size: 1.5rem;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .mini-chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .mini-chat-form {
+            display: flex;
+            padding: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .mini-chat-form input {
+            flex-grow: 1;
+            border: none;
+            background: transparent;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .mini-chat-form input:focus {
+            outline: none;
+        }
+        .mini-chat-form button {
+            background: var(--primary-accent);
+            color: white;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .mini-chat-form button svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* NEW SIMULATION CHAT MODAL */
+        #simulation-chat-modal .card {
+             height: 80vh; 
+             max-height: 700px;
+             width: 90%;
+             max-width: 600px;
+             display: flex; 
+             flex-direction: column;
+             padding: 0;
+             margin: 0;
+        }
+        .simulation-chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .simulation-chat-header h4 { margin: 0; }
+        .simulation-chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .simulation-chat-form-container {
+             padding: 1rem;
+             border-top: 1px solid var(--border-color);
+             flex-shrink: 0;
+        }
+        #simulation-chat-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        #simulation-chat-input {
+            flex-grow: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        #simulation-chat-form button {
+             padding: 0 1.5rem;
+        }
+
 
         /* RESPONSIVENESS */
         @media (max-width: 1200px) {
@@ -598,15 +930,6 @@
             #main-content {
                 padding: 1.5rem;
             }
-            .results-card, #add-expense-form {
-                flex-direction: column;
-                grid-template-columns: 1fr;
-            }
-            .content-header-controls {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
             .pie-chart-container {
                 flex-direction: column;
             }
@@ -618,7 +941,7 @@
     <!-- AUTHENTICATION VIEW -->
     <div id="auth-view">
         <div class="auth-container">
-            <h1>Spend<span>Smart</span></h1>
+            <h1>Fin<span>ova</span></h1>
             <div class="auth-toggle">
                 <button id="show-login-btn" class="active">Log In</button>
                 <button id="show-signup-btn">Create Account</button>
@@ -644,7 +967,7 @@
         <!-- Sidebar -->
         <aside id="sidebar">
             <div>
-                <div class="sidebar-header"><h2>Spend<span>Smart</span></h2></div>
+                <div class="sidebar-header"><h2>Fin<span>ova</span></h2></div>
                 <div class="user-profile">
                     <div class="avatar-placeholder" id="avatar-initial"></div>
                     <span id="user-name-sidebar"></span>
@@ -692,18 +1015,38 @@
                                 <button id="add-expense-toggle-btn" class="primary-button">+ Add Expense</button>
                             </div>
                         </div>
-                        <form id="add-expense-form" class="hidden">
-                            <div><input type="text" id="expense-desc" placeholder="Description" required></div>
-                            <div><input type="date" id="expense-date" required></div>
-                            <div><select id="expense-cat" required>
-                                <option value="" disabled selected>Category (AI will select)</option>
-                                <option value="Food">Food</option><option value="Rent">Rent</option><option value="Transport">Transport</option>
-                                <option value="Shopping">Shopping</option><option value="Bills">Bills</option><option value="Other">Other</option>
-                            </select></div>
-                            <div><input type="number" id="expense-amount" placeholder="Amount" required min="0.01" step="0.01"></div>
-                            <button type="submit" class="primary-button">Save</button>
+                        
+                        <form id="add-expense-form" class="hidden" style="border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                            <h4 class="card-title" style="margin-bottom: 1.5rem; font-size: 1.1rem;">Add New Expense</h4>
+                            <div class="form-group">
+                                <label for="expense-desc">Description</label>
+                                <input type="text" id="expense-desc" placeholder="e.g., Coffee" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-amount">Amount ($)</label>
+                                <input type="number" id="expense-amount" placeholder="e.g., 4.50" required min="0.01" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-date">Date</label>
+                                <input type="date" id="expense-date" required>
+                            </div>
+                            <div style="display: flex; gap: 2rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="expense-necessary">
+                                    <label for="expense-necessary">Necessary</label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="expense-recurring">
+                                    <label for="expense-recurring">Recurring</label>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                                <button type="button" id="cancel-add-expense-btn" class="secondary-button">Cancel</button>
+                                <button type="submit" class="primary-button">Add Expense</button>
+                            </div>
                         </form>
-                        <div id="pdf-import-section" class="hidden" style="padding: 1rem 0; display: flex; align-items: center; gap: 1rem;">
+                        
+                        <div id="pdf-import-section" class="hidden" style="padding: 1rem 0; display: flex; align-items: center; gap: 1rem; border-top: 1px solid var(--border-color);">
                             <input type="file" id="pdf-file-input" accept="application/pdf">
                             <button id="upload-pdf-btn" class="primary-button">Upload & Analyze</button>
                             <span id="pdf-feedback" style="font-size: 0.875rem; color: var(--text-light);"></span>
@@ -724,8 +1067,8 @@
                 </div>
 
                 <div class="card ai-advisor-card">
-                    <h4 class="card-title">AI Advisor</h4>
-                    <p id="ai-advisor-text"></p>
+                    <h4 class="card-title">Finley's Insights</h4>
+                    <div id="ai-advisor-text"></div>
                 </div>
             </section>
 
@@ -737,118 +1080,152 @@
                         <!-- Chat messages will be dynamically inserted here -->
                     </div>
                     <form id="chat-form" class="chat-input-container">
-                        <input type="text" id="chat-input" placeholder="Ask about your spending, APR, savings..." autocomplete="off">
-                        <button type="submit">Send</button>
+                        <div id="chat-suggestions" class="chat-suggestions">
+                            <button type="button">Where can I cut back on spending?</button>
+                            <button type="button">What's the cheapest restaurant near me?</button>
+                            <button type="button">Explain what a Roth IRA is.</button>
+                        </div>
+                        <div class="chat-input-wrapper">
+                            <input type="text" id="chat-input" placeholder="Ask Finley about spending, APR, savings..." autocomplete="off">
+                            <button type="submit">Send</button>
+                        </div>
                     </form>
                 </div>
             </section>
 
             <!-- What-If Simulator Section -->
             <section id="what-if-section" class="content-section">
-                 <h3 class="content-header">What-If Simulator</h3>
-                 <div class="scenario-selector">
-                    <button class="secondary-button" data-scenario="car-vs-uber">Car vs Uber</button>
-                    <button class="secondary-button" data-scenario="rent-vs-buy">Rent vs Buy</button>
-                    <button class="secondary-button" data-scenario="loan">Loan Comparison</button>
-                 </div>
+                <h3 class="content-header">What-If Simulator</h3>
+                <p style="text-align: center; max-width: 600px; margin: -1.5rem auto 2rem auto; color: var(--text-light);">
+                    Analyze big financial decisions with the help of AI. Select a scenario below to get a personalized breakdown.
+                </p>
 
-                <div id="simulator-view-container">
-                     <p id="simulator-initial-msg" class="card" style="text-align: center; color: var(--text-light); padding: 3rem;">
-                        Select a scenario above to get started.
-                    </p>
-                     <!-- Car vs Uber Simulator -->
-                     <div id="car-vs-uber-sim" class="simulator-content hidden">
-                        <p style="margin-bottom: 2rem; max-width: 600px; color: var(--text-light);">Compare the long-term cost of owning a car versus relying on ride-sharing. Fill in your estimates below to see which makes more financial sense.</p>
-                        <div class="grid-container">
-                            <div class="card">
-                                <h4 class="card-title">Car vs Uber Estimates</h4>
-                                <form id="car-vs-uber-form">
-                                    <div class="grid-container"><div class="form-group"><label>Uber rides per week</label><input type="number" id="sim-uber-rides" value="5" required></div><div class="form-group"><label>Avg. cost per ride ($)</label><input type="number" id="sim-uber-cost" value="15" required></div><div class="form-group"><label>Car Price ($)</label><input type="number" id="sim-car-price" value="25000" required></div><div class="form-group"><label>Monthly Gas Cost ($)</label><input type="number" id="sim-gas" value="150" required></div><div class="form-group"><label>Monthly Insurance ($)</label><input type="number" id="sim-insurance" value="120" required></div><div class="form-group"><label>Monthly Maintenance ($)</label><input type="number" id="sim-maintenance" value="50" required></div><div class="form-group"><label>Timeframe (Years)</label><input type="number" id="sim-years" value="5" required></div></div>
-                                    <button type="submit" class="primary-button" style="margin-top: 1rem;">Run Comparison</button>
-                                </form>
-                            </div>
-                            <div class="card">
-                                <h4 class="card-title">Comparison Result</h4>
-                                <div id="car-sim-results-container" class="hidden">
-                                    <div class="results-card"><div class="result-box"><h4>Total Uber Cost</h4><p id="sim-uber-total" class="cost"></p><small id="sim-uber-monthly"></small></div><div class="result-box"><h4>Total Car Cost</h4><p id="sim-car-total" class="cost"></p><small id="sim-car-monthly"></small></div></div>
-                                    <div id="car-sim-recommendation" class="recommendation"></div>
-                                </div>
-                                <p id="car-sim-initial-msg">Run the comparison to see your results.</p>
-                            </div>
-                        </div>
+                <!-- Scenario Cards Grid -->
+                <div id="scenario-grid-container">
+                    <div id="scenario-grid" class="grid-container" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                        <!-- Scenario cards will be dynamically injected here -->
                     </div>
+                </div>
 
-                    <!-- Rent vs Buy Simulator -->
-                    <div id="rent-vs-buy-sim" class="simulator-content hidden">
-                        <p style="margin-bottom: 2rem; max-width: 600px; color: var(--text-light);">Decide between renting and buying a home by comparing the costs over time. Factor in appreciation, taxes, and maintenance.</p>
-                         <div class="grid-container">
-                            <div class="card">
-                                <h4 class="card-title">Rent vs Buy Estimates</h4>
-                                <form id="rent-vs-buy-form">
-                                    <div class="grid-container">
-                                        <div class="form-group"><label>Monthly Rent ($)</label><input type="number" id="sim-rent-monthly" value="2000" required></div>
-                                        <div class="form-group"><label>Home Price ($)</label><input type="number" id="sim-buy-price" value="400000" required></div>
-                                        <div class="form-group"><label>Down Payment (%)</label><input type="number" id="sim-buy-down" value="20" required></div>
-                                        <div class="form-group"><label>Interest Rate (%)</label><input type="number" step="0.01" id="sim-buy-interest" value="6.5" required></div>
-                                        <div class="form-group"><label>Property Tax (%/yr)</label><input type="number" step="0.01" id="sim-buy-tax" value="1.2" required></div>
-                                        <div class="form-group"><label>Maintenance ($/yr)</label><input type="number" id="sim-buy-maint" value="4000" required></div>
-                                        <div class="form-group"><label>Appreciation (%/yr)</label><input type="number" step="0.01" id="sim-buy-apprec" value="3" required></div>
-                                        <div class="form-group"><label>Timeframe (Years)</label><input type="number" id="sim-buy-years" value="10" required></div>
-                                    </div>
-                                    <button type="submit" class="primary-button" style="margin-top: 1rem;">Run Comparison</button>
-                                </form>
-                            </div>
-                            <div class="card">
-                                <h4 class="card-title">Comparison Result</h4>
-                                <div id="rent-sim-results-container" class="hidden">
-                                    <div class="results-card"><div class="result-box"><h4>Total Rent Cost</h4><p id="sim-rent-total" class="cost"></p></div><div class="result-box"><h4>Net Buy Cost</h4><p id="sim-buy-total" class="cost"></p><small>After selling</small></div></div>
-                                    <div id="rent-sim-recommendation" class="recommendation"></div>
-                                </div>
-                                <p id="rent-sim-initial-msg">Run the comparison to see your results.</p>
-                            </div>
+                <!-- Simulator Input Panel (Modal) -->
+                <div id="simulator-panel" class="hidden modal-panel">
+                    <div class="card" style="width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; margin: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 id="simulator-panel-title" class="card-title" style="margin-bottom: 0;">Scenario Details</h4>
+                            <button id="close-simulator-panel-btn" class="modal-close-button">&times;</button>
                         </div>
+                        <form id="simulator-input-form" style="margin-top: 1.5rem;">
+                            <div id="simulator-inputs-container"></div>
+                            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                                <button type="button" class="secondary-button" id="cancel-simulator-btn">Cancel</button>
+                                <button type="submit" class="primary-button">Get AI Analysis</button>
+                            </div>
+                        </form>
                     </div>
+                </div>
 
-                    <!-- Loan Comparison Simulator -->
-                    <div id="loan-sim" class="simulator-content hidden">
-                        <p style="margin-bottom: 2rem; max-width: 600px; color: var(--text-light);">Compare two different loans to see which is better over the long run. Look at total interest paid and monthly payments.</p>
-                         <div class="grid-container">
-                            <div class="card">
-                                <h4 class="card-title">Loan Details</h4>
-                                <form id="loan-form">
-                                    <div class="form-group"><label>Loan Amount ($)</label><input type="number" id="sim-loan-amount" value="10000" required></div>
-                                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
-                                    <h5 style="margin-bottom: 1rem;">Loan A</h5>
-                                    <div class="grid-container">
-                                        <div class="form-group"><label>Interest Rate (%)</label><input type="number" step="0.01" id="sim-loan-a-rate" value="5" required></div>
-                                        <div class="form-group"><label>Term (Years)</label><input type="number" id="sim-loan-a-term" value="5" required></div>
-                                    </div>
-                                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
-                                    <h5 style="margin-bottom: 1rem;">Loan B</h5>
-                                    <div class="grid-container">
-                                        <div class="form-group"><label>Interest Rate (%)</label><input type="number" step="0.01" id="sim-loan-b-rate" value="7" required></div>
-                                        <div class="form-group"><label>Term (Years)</label><input type="number" id="sim-loan-b-term" value="3" required></div>
-                                    </div>
-                                    <button type="submit" class="primary-button" style="margin-top: 1rem;">Run Comparison</button>
-                                </form>
-                            </div>
-                            <div class="card">
-                                 <h4 class="card-title">Comparison Result</h4>
-                                <div id="loan-sim-results-container" class="hidden">
-                                    <div class="results-card">
-                                        <div class="result-box"><h4>Loan A</h4><p id="loan-a-monthly" class="cost"></p><small id="loan-a-total-interest">Total Interest</small></div>
-                                        <div class="result-box"><h4>Loan B</h4><p id="loan-b-monthly" class="cost"></p><small id="loan-b-total-interest">Total Interest</small></div>
-                                    </div>
-                                    <div id="loan-sim-recommendation" class="recommendation"></div>
-                                </div>
-                                <p id="loan-sim-initial-msg">Run the comparison to see your results.</p>
-                            </div>
-                        </div>
+                <!-- Simulator Results Panel -->
+                <div id="simulator-results-panel" class="hidden card" style="margin-top: 2rem;">
+                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 id="simulator-results-title" class="card-title">AI Analysis Results</h4>
+                        <button id="back-to-scenarios-btn" class="secondary-button">Back to Scenarios</button>
+                    </div>
+                    <div id="simulator-results-content" class="bot-message" style="background: transparent; padding: 0;">
+                        <!-- AI response will be rendered here -->
                     </div>
                 </div>
             </section>
         </main>
     </div>
+
+    <!-- Floating Chat Widget -->
+    <button id="finley-fab" class="hidden" aria-label="Chat with Finley">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28px" height="28px">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.85 0 3.58-.5 5.09-1.38l3.62 1.81c.23.12.5-.06.5-.31v-3.41c1.31-1.48 2.12-3.32 2.12-5.33C22 6.48 17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+            <path d="M12 11c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm4 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-8 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" />
+        </svg>
+    </button>
+    <div id="finley-mini-chat" class="hidden">
+        <div class="mini-chat-header">
+            <h4>Finley</h4>
+            <div class="mini-chat-controls">
+                <button id="mini-chat-minimize-btn" class="mini-chat-header-btn" aria-label="Minimize chat">
+                    <!-- SVG will be injected by JS -->
+                </button>
+                <button id="mini-chat-expand-btn" class="mini-chat-header-btn">Open full chat</button>
+                <button id="mini-chat-close-btn" class="mini-chat-header-btn" aria-label="Close chat">&times;</button>
+            </div>
+        </div>
+        <div id="mini-chat-messages" class="mini-chat-messages">
+            <!-- Mini chat messages will be dynamically inserted here -->
+        </div>
+        <form id="mini-chat-form" class="mini-chat-form">
+            <input type="text" id="mini-chat-input" placeholder="Ask Finley..." autocomplete="off">
+            <button type="submit" aria-label="Send message">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20px" height="20px">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <!-- Edit Budget Modal -->
+    <div id="edit-budget-modal" class="hidden modal-panel" style="z-index: 1001;">
+        <div class="card" style="width: 90%; max-width: 400px;">
+            <h4 class="card-title">Edit Budget for <span id="budget-modal-month"></span></h4>
+            <form id="edit-budget-form">
+                <div class="form-group">
+                    <label for="budget-input">Monthly Budget ($)</label>
+                    <input type="number" id="budget-input" required min="0" step="0.01" placeholder="e.g., 2500">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="button" id="cancel-budget-edit-btn" class="secondary-button">Cancel</button>
+                    <button type="submit" class="primary-button">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Simulation Choice Modal -->
+    <div id="simulation-choice-modal" class="hidden modal-panel" style="z-index: 1002;">
+         <div class="card" style="width: 90%; max-width: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                 <h4 class="card-title" id="simulation-choice-title">Choose Simulation Type</h4>
+                 <button id="close-simulation-choice-btn" class="modal-close-button">&times;</button>
+            </div>
+            <p style="color: var(--text-light); margin-top: -0.5rem; margin-bottom: 1rem;">How would you like to analyze this scenario?</p>
+            <div class="simulation-choice-buttons">
+                <button id="choice-quick-sim" class="secondary-button">
+                    <strong>Quick Simulation</strong>
+                    <span>Fill out a simple form with all your details at once.</span>
+                </button>
+                <button id="choice-chat-sim" class="secondary-button">
+                    <strong>Chat Based Simulation</strong>
+                    <span>Let Finley guide you through the questions one by one.</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW Simulation CHAT Modal -->
+    <div id="simulation-chat-modal" class="hidden modal-panel" style="z-index: 1003;">
+        <div class="card">
+            <div class="simulation-chat-header">
+                <h4 id="simulation-chat-title" class="card-title">Chat Simulation</h4>
+                <button id="close-simulation-chat-btn" class="modal-close-button">&times;</button>
+            </div>
+            <div id="simulation-chat-messages" class="simulation-chat-messages chat-window">
+                <!-- Simulation chat messages appear here -->
+            </div>
+            <div class="simulation-chat-form-container">
+                 <form id="simulation-chat-form">
+                    <input type="text" id="simulation-chat-input" placeholder="Type your answer..." autocomplete="off">
+                    <button type="submit" class="primary-button">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         import { GoogleGenAI } from "https://esm.run/@google/genai";
@@ -861,12 +1238,15 @@
             let transactionsByMonth = {};
             let budgetsByMonth = {};
             let selectedDate = new Date();
+            let userLocation = null; // To cache user's location
+            let finleyMessages = []; // SHARED STATE FOR CHAT
             
             // Gemini AI Setup
             let ai;
             try {
                 ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            } catch (error) {
+            } catch (error)
+            {
                 console.error("Failed to initialize GoogleGenAI. API_KEY might be missing.", error);
                 alert("Could not initialize AI features. Please ensure your API key is set up correctly.");
             }
@@ -887,10 +1267,21 @@
             const contentSections = document.querySelectorAll('.content-section');
             
             // Finance Coach (Chatbot) Elements
+            const chatSuggestions = document.getElementById('chat-suggestions');
             const chatWindow = document.getElementById('chat-window');
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
             let coachInitialized = false;
+
+            // Mini Chat Widget Elements
+            const finleyFab = document.getElementById('finley-fab');
+            const finleyMiniChat = document.getElementById('finley-mini-chat');
+            const miniChatMessages = document.getElementById('mini-chat-messages');
+            const miniChatForm = document.getElementById('mini-chat-form');
+            const miniChatInput = document.getElementById('mini-chat-input');
+            const miniChatCloseBtn = document.getElementById('mini-chat-close-btn');
+            const miniChatExpandBtn = document.getElementById('mini-chat-expand-btn');
+            const miniChatMinimizeBtn = document.getElementById('mini-chat-minimize-btn');
 
             // Budget & Expenses Elements
             const prevMonthBtn = document.getElementById('prev-month-btn');
@@ -904,8 +1295,11 @@
             const addExpenseToggleBtn = document.getElementById('add-expense-toggle-btn');
             const addExpenseForm = document.getElementById('add-expense-form');
             const expenseDescInput = document.getElementById('expense-desc');
+            const expenseAmountInput = document.getElementById('expense-amount');
             const expenseDateInput = document.getElementById('expense-date');
-            const expenseCatSelect = document.getElementById('expense-cat');
+            const expenseNecessaryInput = document.getElementById('expense-necessary');
+            const expenseRecurringInput = document.getElementById('expense-recurring');
+            const cancelAddExpenseBtn = document.getElementById('cancel-add-expense-btn');
             const transactionsListContainer = document.getElementById('transactions-list-container');
             const noTransactionsMsg = document.getElementById('no-transactions-msg');
             const pieChartEl = document.getElementById('pie-chart');
@@ -918,13 +1312,15 @@
             const uploadPdfBtn = document.getElementById('upload-pdf-btn');
             const pdfFeedback = document.getElementById('pdf-feedback');
             
+            // Edit Budget Modal Elements
+            const editBudgetModal = document.getElementById('edit-budget-modal');
+            const editBudgetForm = document.getElementById('edit-budget-form');
+            const budgetInput = document.getElementById('budget-input');
+            const budgetModalMonth = document.getElementById('budget-modal-month');
+            const cancelBudgetEditBtn = document.getElementById('cancel-budget-edit-btn');
+            
             const CATEGORIES = ["Food", "Rent", "Transport", "Shopping", "Bills", "Other"];
             const CATEGORY_COLORS = { Food: 'var(--cat-food)', Rent: 'var(--cat-rent)', Transport: 'var(--cat-transport)', Shopping: 'var(--cat-shopping)', Bills: 'var(--cat-bills)', Other: 'var(--cat-other)' };
-
-            // What-If Simulator Elements
-            const scenarioSelectorBtns = document.querySelectorAll('.scenario-selector button');
-            const simulatorContents = document.querySelectorAll('.simulator-content');
-            const simulatorInitialMsg = document.getElementById('simulator-initial-msg');
 
             // ===================================
             //  HELPER FUNCTIONS
@@ -932,19 +1328,62 @@
             const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
             const getMonthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
             const getStorageKey = (base) => `${base}_${currentUser.email}`;
+            const getUserLocation = () => new Promise((resolve) => {
+                if (userLocation) return resolve(userLocation);
+                if ('geolocation' in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            userLocation = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                            };
+                            resolve(userLocation);
+                        },
+                        () => resolve(null), // Error or permission denied
+                        { enableHighAccuracy: false, timeout: 5000, maximumAge: 1000 * 60 * 15 }
+                    );
+                } else {
+                    resolve(null);
+                }
+            });
             
             // ===================================
             //  DATA PERSISTENCE
             // ===================================
             function loadData() {
-                transactionsByMonth = JSON.parse(localStorage.getItem(getStorageKey('transactionsByMonth'))) || {};
+                const rawTransactions = JSON.parse(localStorage.getItem(getStorageKey('transactionsByMonth'))) || {};
+                // Data migration for older transaction formats
+                Object.values(rawTransactions).forEach(monthlyTxs => {
+                    monthlyTxs.forEach(tx => {
+                        if (!tx.id) tx.id = Date.now() + Math.random();
+                        tx.necessary = tx.necessary ?? true;
+                        tx.recurring = tx.recurring ?? false;
+                    });
+                });
+                transactionsByMonth = rawTransactions;
                 budgetsByMonth = JSON.parse(localStorage.getItem(getStorageKey('budgetsByMonth'))) || {};
+                loadChatHistory();
             }
 
             function saveData() {
                 localStorage.setItem(getStorageKey('transactionsByMonth'), JSON.stringify(transactionsByMonth));
                 localStorage.setItem(getStorageKey('budgetsByMonth'), JSON.stringify(budgetsByMonth));
             }
+             function saveChatHistory() {
+                if(currentUser) {
+                    localStorage.setItem(getStorageKey('finleyChatHistory'), JSON.stringify(finleyMessages));
+                }
+            }
+            function loadChatHistory() {
+                const history = localStorage.getItem(getStorageKey('finleyChatHistory'));
+                finleyMessages = history ? JSON.parse(history) : [];
+                if (finleyMessages.length === 0 && currentUser) {
+                    // Start with a welcome message if history is empty
+                    finleyMessages.push({ sender: 'bot', html: `Hi ${currentUser.name}! I'm Finley, your personal finance coach from Finova. Ask me anything about your spending, general finance, or even for local recommendations!` });
+                }
+                renderAllChatUIs();
+            }
+
 
             // ===================================
             //  AUTHENTICATION
@@ -971,6 +1410,7 @@
             function showDashboard() {
                 authView.classList.add('hidden');
                 dashboardView.classList.remove('hidden');
+                finleyFab.classList.remove('hidden');
                 userNameSidebar.textContent = currentUser.name;
                 avatarInitial.textContent = currentUser.name.charAt(0).toUpperCase();
                 updateDashboardForMonth();
@@ -979,7 +1419,10 @@
             function showAuthView() {
                 dashboardView.classList.add('hidden');
                 authView.classList.remove('hidden');
+                finleyFab.classList.add('hidden');
+                finleyMiniChat.classList.add('hidden');
                 currentUser = null;
+                finleyMessages = [];
                 localStorage.removeItem('isLoggedIn');
             }
 
@@ -1039,7 +1482,7 @@
                 renderBudgetSummary(budget, totalSpent, remaining);
                 renderTransactionList(transactions);
                 renderPieChart(spendingByCategory, totalSpent);
-                renderAIAdvisor(budget, totalSpent, spendingByCategory);
+                renderAIAdvisor(budget, totalSpent, transactions, spendingByCategory);
             }
 
             function renderMonthHeader() {
@@ -1073,8 +1516,9 @@
                             <div class="transaction-desc">${tx.description}</div>
                             <div class="transaction-cat">${tx.category}</div>
                         </div>
-                        <div class="transaction-date">${tx.date}</div>
+                        <div class="transaction-date">${new Date(tx.date + 'T00:00:00').toLocaleDateString()}</div>
                         <div class="transaction-amount">-${formatCurrency(tx.amount)}</div>
+                        <button class="delete-tx-btn" data-tx-id="${tx.id}" aria-label="Delete transaction">🗑️</button>
                     `;
                     transactionsListContainer.appendChild(item);
                 });
@@ -1107,33 +1551,81 @@
                 pieChartEl.style.background = gradientString.slice(0, -2) + ')';
             }
 
-            function renderAIAdvisor(budget, totalSpent, spendingByCategory) {
-                if (totalSpent === 0) {
-                    aiAdvisorText.textContent = "Start by adding your first expense for this month to get personalized advice.";
+            async function renderAIAdvisor(budget, totalSpent, transactions, spendingByCategory) {
+                if (!ai) {
+                    aiAdvisorText.innerHTML = "<p>AI features are unavailable. Please check your API key.</p>";
+                    return;
+                }
+                if (transactions.length < 1) {
+                    aiAdvisorText.innerHTML = "<p>Add an expense for this month to get personalized advice.</p>";
                     return;
                 }
                 if (budget === 0) {
-                    aiAdvisorText.textContent = "Set a monthly budget to unlock helpful insights on your spending habits.";
+                    aiAdvisorText.innerHTML = "<p>Set a monthly budget to unlock helpful insights on your spending habits.</p>";
                     return;
                 }
-                
-                const spendingRatio = totalSpent / budget;
-                let advice = [];
-                
-                if (spendingRatio > 1) {
-                    advice.push(`You've gone over your budget by ${formatCurrency(totalSpent - budget)}. It's a good time to review your spending.`);
-                } else if (spendingRatio >= 0.9) {
-                    advice.push(`You’re very close to your budget limit. Be mindful of any further expenses this month.`);
-                } else if (spendingRatio < 0.7) {
-                    advice.push(`Great job staying well under your budget! You're on track to save ${formatCurrency(budget - totalSpent)} this month.`);
+
+                aiAdvisorText.innerHTML = "<p>Analyzing your spending patterns... 🧠</p>";
+
+                const currentMonthKey = getMonthKey(selectedDate);
+                const historicalMonthKeys = Object.keys(transactionsByMonth).filter(key => key < currentMonthKey);
+                let historicalTotalSpent = 0;
+                const historicalCategorySpending = {};
+                let historicalMonthsCount = historicalMonthKeys.length;
+
+                if (historicalMonthsCount > 0) {
+                    historicalMonthKeys.forEach(key => {
+                        const monthlyTxs = transactionsByMonth[key] || [];
+                        historicalTotalSpent += monthlyTxs.reduce((sum, tx) => sum + tx.amount, 0);
+                        monthlyTxs.forEach(tx => {
+                            historicalCategorySpending[tx.category] = (historicalCategorySpending[tx.category] || 0) + tx.amount;
+                        });
+                    });
                 }
 
-                const highestCat = Object.keys(spendingByCategory).reduce((a, b) => spendingByCategory[a] > spendingByCategory[b] ? a : b, null);
-                if (highestCat && spendingByCategory[highestCat] / totalSpent > 0.4) {
-                    advice.push(`Your spending on ${highestCat} is a significant part of your total. See if there are ways to optimize it.`);
+                const averageMonthlySpend = historicalMonthsCount > 0 ? historicalTotalSpent / historicalMonthsCount : 0;
+                const averageCategorySpend = {};
+                for (const category in historicalCategorySpending) {
+                    averageCategorySpend[category] = historicalCategorySpending[category] / historicalMonthsCount;
                 }
-                
-                aiAdvisorText.textContent = advice.length > 0 ? advice.join(' ') : "Your spending looks balanced. Keep up the great work!";
+
+                try {
+                    const prompt = `
+                        You are Finley, an expert AI finance coach from Finova. Your tone is proactive, insightful, and hyper-personalized, as if you are a real person reviewing my finances. My name is ${currentUser.name}.
+
+                        **My Historical Spending Averages (from previous months):**
+                        - Average Monthly Spending: ${formatCurrency(averageMonthlySpend)}
+                        - Average Spending Per Category:
+                        ${Object.keys(averageCategorySpend).length > 0 ? Object.entries(averageCategorySpend).map(([cat, amt]) => `  - ${cat}: ${formatCurrency(amt)}`).join('\n') : '  - No historical category data yet.'}
+
+                        **My Current Month's Data (${selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}):**
+                        - My Budget: ${formatCurrency(budget)}
+                        - Total Spent So Far: ${formatCurrency(totalSpent)}
+                        - My Full Transaction List:
+                        ${transactions.map(tx => `  - ${tx.date}: ${tx.description} - ${formatCurrency(tx.amount)} (${tx.category}) | Necessary: ${tx.necessary}`).join('\n')}
+
+                        **Your Task: Provide a Hyper-Personalized Financial Insight and Actionable Tip**
+                        Your analysis must be grounded in my specific transactions. Follow these steps precisely:
+
+                        1.  **Personal Greeting:** Start by addressing me by name.
+                        2.  **Deliver the Key Insight:** Start with a bolded "**This Month's Key Insight:**". Then, state the single most important observation about my spending this month. This could be a high-spending category, a pattern of small frequent purchases, or a significant deviation from my average.
+                        3.  **Provide Supporting Evidence:** Back up your insight with specific data. Mention 1-2 transactions by name (e.g., "I noticed your spending at 'Starbucks' and 'Local Cafe'...") and compare the relevant category total to my historical average.
+                        4.  **Give an Actionable Tip:** Start with a bolded "**Your Actionable Tip for Next Month:**". Provide one concrete, forward-looking suggestion based on your insight. It should be a practical step I can take in my next budget.
+                        5.  **Offer a Positive Observation:** Find one area where I'm doing well (e.g., spending less than average in a category) and offer some praise to keep me motivated.
+
+                        Your response should be concise and feel like a personal coach is looking directly at my statement and helping me plan for the future. Use Markdown for formatting.`;
+                    
+                    const response = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: prompt,
+                    });
+                    
+                    aiAdvisorText.innerHTML = marked.parse(response.text || '');
+
+                } catch (error) {
+                    console.error("AI Advisor Error:", error);
+                    aiAdvisorText.innerHTML = "<p>I'm having trouble generating advice right now. Please try again later.</p>";
+                }
             }
             
             async function getCategoryFromAI(description) {
@@ -1162,53 +1654,104 @@
             editBudgetBtn.addEventListener('click', () => {
                 const monthKey = getMonthKey(selectedDate);
                 const currentBudget = budgetsByMonth[monthKey] || 0;
-                const newBudget = prompt('Enter new budget for this month:', currentBudget);
-                if (newBudget !== null && !isNaN(parseFloat(newBudget)) && parseFloat(newBudget) >= 0) {
-                    budgetsByMonth[monthKey] = parseFloat(newBudget);
-                    saveData();
-                    updateDashboardForMonth();
-                }
+                budgetModalMonth.textContent = selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+                budgetInput.value = currentBudget > 0 ? currentBudget : '';
+                editBudgetModal.classList.remove('hidden');
+                budgetInput.focus();
             });
             
-            addExpenseToggleBtn.addEventListener('click', () => {
-                 addExpenseForm.classList.toggle('hidden');
-                 expenseDateInput.valueAsDate = new Date();
+            cancelBudgetEditBtn.addEventListener('click', () => {
+                editBudgetModal.classList.add('hidden');
             });
 
-            expenseDescInput.addEventListener('blur', async () => {
-                const description = expenseDescInput.value.trim();
-                if (description) {
-                    expenseCatSelect.disabled = true;
-                    const originalOption = expenseCatSelect.querySelector('option[value=""]');
-                    originalOption.textContent = 'AI is categorizing...';
-                    
-                    const category = await getCategoryFromAI(description);
-                    
-                    expenseCatSelect.value = category;
-                    expenseCatSelect.disabled = false;
-                    originalOption.textContent = 'Category (AI will select)';
+            editBudgetModal.addEventListener('click', (e) => {
+                if (e.target === editBudgetModal) {
+                    editBudgetModal.classList.add('hidden');
                 }
             });
 
-            addExpenseForm.addEventListener('submit', (e) => {
+            editBudgetForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const desc = document.getElementById('expense-desc').value;
-                const date = document.getElementById('expense-date').value;
-                const category = document.getElementById('expense-cat').value;
-                const amount = parseFloat(document.getElementById('expense-amount').value);
+                const newBudget = parseFloat(budgetInput.value);
+                if (!isNaN(newBudget) && newBudget >= 0) {
+                    const monthKey = getMonthKey(selectedDate);
+                    budgetsByMonth[monthKey] = newBudget;
+                    saveData();
+                    updateDashboardForMonth();
+                    editBudgetModal.classList.add('hidden');
+                }
+            });
 
-                if (!desc || !date || !category || isNaN(amount) || amount <= 0) return;
+            addExpenseToggleBtn.addEventListener('click', () => {
+                 addExpenseForm.classList.remove('hidden');
+                 expenseDateInput.valueAsDate = new Date();
+                 addExpenseToggleBtn.classList.add('hidden');
+            });
+
+            cancelAddExpenseBtn.addEventListener('click', () => {
+                addExpenseForm.classList.add('hidden');
+                addExpenseForm.reset();
+                addExpenseToggleBtn.classList.remove('hidden');
+            });
+
+            addExpenseForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const desc = expenseDescInput.value;
+                const amount = parseFloat(expenseAmountInput.value);
+                const date = expenseDateInput.value;
+                const isNecessary = expenseNecessaryInput.checked;
+                const isRecurring = expenseRecurringInput.checked;
+
+                if (!desc || !date || isNaN(amount) || amount <= 0) return;
                 
-                const transaction = { description: desc, date, category, amount };
-                const monthKey = getMonthKey(new Date(date + 'T00:00:00'));
-                
-                if (!transactionsByMonth[monthKey]) transactionsByMonth[monthKey] = [];
-                transactionsByMonth[monthKey].push(transaction);
+                const category = await getCategoryFromAI(desc);
+
+                const baseTransaction = { 
+                    id: Date.now(), 
+                    description: desc, 
+                    amount, 
+                    category, 
+                    necessary: isNecessary, 
+                    recurring: isRecurring 
+                };
+
+                const addTransaction = (txDate) => {
+                    const monthKey = getMonthKey(txDate);
+                    const transactionForMonth = { ...baseTransaction, id: Date.now() + Math.random(), date: txDate.toISOString().split('T')[0] };
+                    if (!transactionsByMonth[monthKey]) transactionsByMonth[monthKey] = [];
+                    transactionsByMonth[monthKey].push(transactionForMonth);
+                };
+
+                const initialDate = new Date(date + 'T00:00:00');
+                addTransaction(initialDate);
+
+                if (isRecurring) {
+                    for (let i = 1; i <= 11; i++) {
+                        const nextDate = new Date(initialDate);
+                        nextDate.setMonth(initialDate.getMonth() + i);
+                        addTransaction(nextDate);
+                    }
+                }
                 
                 saveData();
                 addExpenseForm.reset();
                 addExpenseForm.classList.add('hidden');
+                addExpenseToggleBtn.classList.remove('hidden');
                 updateDashboardForMonth();
+            });
+            
+            transactionsListContainer.addEventListener('click', (e) => {
+                const deleteButton = e.target.closest('.delete-tx-btn');
+                if (deleteButton) {
+                    const txIdToDelete = parseFloat(deleteButton.dataset.txId);
+                    const monthKey = getMonthKey(selectedDate);
+                    
+                    if (transactionsByMonth[monthKey]) {
+                        transactionsByMonth[monthKey] = transactionsByMonth[monthKey].filter(tx => tx.id !== txIdToDelete);
+                        saveData();
+                        updateDashboardForMonth();
+                    }
+                }
             });
             
             importPdfBtn.addEventListener('click', () => pdfImportSection.classList.toggle('hidden'));
@@ -1224,7 +1767,7 @@
                 uploadPdfBtn.disabled = true;
                 uploadPdfBtn.textContent = 'Reading PDF...';
                 pdfFeedback.textContent = '';
-                
+
                 fileReader.onload = async function() {
                     try {
                         const typedarray = new Uint8Array(this.result);
@@ -1236,54 +1779,74 @@
                             fullText += content.items.map(item => item.str).join('\n');
                         }
 
-                        // Regex to find potential transactions in a bank statement
-                        const transactionRegex = /^(?:\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?)\s+(.*?)\s+(?:-?\$?(\d{1,3}(?:,\d{3})*\.\d{2}))/gm;
-                        let match;
-                        const potentialTransactions = [];
-                        while ((match = transactionRegex.exec(fullText)) !== null) {
-                            // This is the place where you capture parts of the matched string
-                            const dateStr = match[0].match(/^\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?/)[0];
-                            const description = match[1].trim();
-                            const amount = parseFloat(match[2].replace(/,/g, ''));
-                             potentialTransactions.push({ date: new Date(dateStr), description, amount });
-                        }
-                        
-                        if (potentialTransactions.length === 0) {
-                             pdfFeedback.textContent = 'Could not find any transactions in this statement.';
-                             pdfFeedback.style.color = 'var(--text-danger)';
-                             return;
+                        const transactionsIndex = fullText.toLowerCase().indexOf('transactions');
+                        const transactionsText = transactionsIndex !== -1 ? fullText.substring(transactionsIndex) : fullText;
+
+                        if (!transactionsText.trim()) {
+                            pdfFeedback.textContent = 'Could not find any transaction data in this document.';
+                            pdfFeedback.style.color = 'var(--text-danger)';
+                            return;
                         }
 
-                        uploadPdfBtn.textContent = `Categorizing ${potentialTransactions.length} items...`;
-                        
-                        const descriptionsToCategorize = potentialTransactions.map(t => t.description);
-                        const prompt = `You are an expert financial transaction categorizer. Based on the provided list of transaction descriptions, categorize each one into a single, most appropriate category from the following list: ${CATEGORIES.join(', ')}. Respond with ONLY a valid JSON array of objects. Each object must have an "original_description" key (with the exact string I provided) and a "category" key (with your chosen category). Descriptions to categorize: ${JSON.stringify(descriptionsToCategorize)}`;
+                        uploadPdfBtn.textContent = 'Analyzing with AI...';
 
+                        const prompt = `
+                            You are an intelligent financial statement parser.
+                            Your task is to extract all transaction details from the following text and return them as a valid JSON array of objects.
+                            Each object must have the following keys: "date" (in YYYY-MM-DD format), "description", "category", and "amount" (as a number).
+                            
+                            Use the following list of valid categories to normalize the category for each transaction. Choose the most appropriate one. If no category fits, use "Other".
+                            Valid Categories: ${CATEGORIES.join(', ')}.
+
+                            Here is the text to parse:
+                            ---
+                            ${transactionsText}
+                            ---
+
+                            Respond with ONLY the JSON array. Do not include any other text, markdown formatting, or explanations.`;
+                        
                         const response = await ai.models.generateContent({
                             model: 'gemini-2.5-flash',
                             contents: prompt,
                             config: { responseMimeType: "application/json" }
                         });
                         
-                        const categorizedResults = JSON.parse(response.text);
-                        const categoryMap = new Map(categorizedResults.map(item => [item.original_description, item.category]));
+                        const parsedTransactions = JSON.parse(response.text);
+
+                        if (!Array.isArray(parsedTransactions) || parsedTransactions.length === 0) {
+                            pdfFeedback.textContent = 'No transactions were found after AI analysis.';
+                            pdfFeedback.style.color = 'var(--text-danger)';
+                            return;
+                        }
 
                         let newTransactionsCount = 0;
-                        potentialTransactions.forEach(tx => {
-                            const category = categoryMap.get(tx.description) || 'Other';
-                            const dateString = tx.date.toISOString().split('T')[0];
-                            const monthKey = getMonthKey(tx.date);
-                            
-                            const transaction = {
-                                date: dateString,
-                                description: tx.description,
-                                category: category,
-                                amount: tx.amount
-                            };
+                        parsedTransactions.forEach(tx => {
+                            if (tx.date && tx.description && tx.category && typeof tx.amount === 'number' && tx.amount > 0) {
+                                const date = new Date(tx.date + 'T00:00:00'); // Handle timezone issues
+                                if (isNaN(date.getTime())) {
+                                    console.warn('Skipping transaction with invalid date from AI:', tx);
+                                    return;
+                                }
+                                
+                                const dateString = date.toISOString().split('T')[0];
+                                const monthKey = getMonthKey(date);
+                                
+                                const transaction = {
+                                    id: Date.now() + Math.random(),
+                                    date: dateString,
+                                    description: tx.description,
+                                    category: CATEGORIES.includes(tx.category) ? tx.category : 'Other',
+                                    amount: tx.amount,
+                                    necessary: true,
+                                    recurring: false
+                                };
 
-                            if (!transactionsByMonth[monthKey]) transactionsByMonth[monthKey] = [];
-                            transactionsByMonth[monthKey].push(transaction);
-                            newTransactionsCount++;
+                                if (!transactionsByMonth[monthKey]) transactionsByMonth[monthKey] = [];
+                                transactionsByMonth[monthKey].push(transaction);
+                                newTransactionsCount++;
+                            } else {
+                                console.warn('Skipping malformed transaction from AI:', tx);
+                            }
                         });
 
                         if (newTransactionsCount > 0) {
@@ -1291,11 +1854,14 @@
                             updateDashboardForMonth();
                             pdfFeedback.textContent = `Success! ${newTransactionsCount} transactions imported.`;
                             pdfFeedback.style.color = 'var(--text-success)';
+                        } else {
+                             pdfFeedback.textContent = `Could not import any valid transactions. Please check the PDF.`;
+                             pdfFeedback.style.color = 'var(--text-danger)';
                         }
 
                     } catch (error) {
                         console.error("Error processing PDF:", error);
-                        pdfFeedback.textContent = 'Error analyzing PDF. The format might be unsupported.';
+                        pdfFeedback.textContent = 'Error analyzing PDF. The format might be unsupported or an AI error occurred.';
                         pdfFeedback.style.color = 'var(--text-danger)';
                     } finally {
                         uploadPdfBtn.disabled = false;
@@ -1312,25 +1878,65 @@
 
 
             // ===================================
-            //  FINANCE COACH (AI CHATBOT)
+            //  FINANCE COACH (AI CHATBOT) - REFACTORED
             // ===================================
-            function addChatMessage(sender, message) {
-                const messageEl = document.createElement('div');
-                messageEl.className = `chat-message ${sender}-message`;
-                messageEl.textContent = message;
-                chatWindow.appendChild(messageEl);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-                return messageEl;
+            function addBotMessageToChat(htmlContent) {
+                 finleyMessages.push({ sender: 'bot', html: htmlContent });
+                 saveChatHistory();
+                 renderAllChatUIs();
             }
 
-            async function getBotResponse(userInput) {
-                if (!ai) {
-                    addChatMessage('bot', 'AI features are not available. Please check your API key.');
+            function renderFullChat() {
+                chatWindow.innerHTML = '';
+                finleyMessages.forEach(msg => {
+                    const messageEl = document.createElement('div');
+                    messageEl.className = `chat-message ${msg.sender}-message`;
+                    if (msg.sender === 'user') {
+                        messageEl.textContent = msg.text;
+                    } else {
+                        messageEl.innerHTML = msg.html;
+                    }
+                    chatWindow.appendChild(messageEl);
+                });
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            function renderMiniChat() {
+                miniChatMessages.innerHTML = '';
+                const messagesToRender = finleyMessages.slice(-20); // Show last 20
+                messagesToRender.forEach(msg => {
+                     const messageEl = document.createElement('div');
+                    messageEl.className = `chat-message ${msg.sender}-message`;
+                    if (msg.sender === 'user') {
+                        messageEl.textContent = msg.text;
+                    } else {
+                        messageEl.innerHTML = msg.html;
+                    }
+                    miniChatMessages.appendChild(messageEl);
+                });
+                miniChatMessages.scrollTop = miniChatMessages.scrollHeight;
+            }
+
+            function renderAllChatUIs() {
+                renderFullChat();
+                renderMiniChat();
+            }
+            
+            async function getGeneralFinleyResponse(userInput) {
+                // Add bot thinking message
+                finleyMessages.push({ sender: 'bot', html: 'Thinking...' });
+                renderAllChatUIs();
+                const thinkingMessageIndex = finleyMessages.length - 1;
+                
+                 if (!ai) {
+                    finleyMessages[thinkingMessageIndex] = { sender: 'bot', html: 'AI features are not available. Please check your API key.'};
+                    saveChatHistory();
+                    renderAllChatUIs();
                     return;
                 }
-                const thinkingMessage = addChatMessage('bot', 'Thinking...');
-                
+
                 try {
+                    const location = await getUserLocation();
                     const monthKey = getMonthKey(selectedDate);
                     const transactions = transactionsByMonth[monthKey] || [];
                     const budget = budgetsByMonth[monthKey] || 0;
@@ -1352,189 +1958,977 @@
                     }
 
                     const prompt = `
-                        You are SpendSmart, a friendly and insightful AI finance coach. 
-                        Your tone should be encouraging, clear, and helpful. Avoid financial jargon.
-                        Keep your answers concise (2-4 sentences).
-                        Based on the following financial context, answer my question.
+                        You are Finley, an expert, friendly AI finance coach from Finova. Your persona is helpful, encouraging, clear, and extremely thorough.
 
-                        My Financial Context:
+                        My Personal Financial Context for this Month:
                         ${financialContext}
 
-                        My Question: "${userInput}"
+                        IMPORTANT RULES FOR YOUR RESPONSE:
+                        1.  **Conditional Financial Disclaimer**: ONLY if the user's question is about investing (e.g., stocks, bonds, funds, how to invest, investment advice), you MUST begin your response with this exact disclaimer on its own line: "As an AI, this is not financial advice. Please consult with a professional financial advisor." Do NOT use this disclaimer for general financial topics like budgeting, saving, or explaining concepts like APR.
+                        2.  **Location-Based Answers**: If you use my location to find places (like restaurants or banks), list the places but do NOT mention travel times or distances (e.g., "5 minutes away"). Simply state you are using my approximate location.
+                        3.  **Detailed & Structured Answers**: Provide comprehensive, well-structured answers, especially for complex topics. Use Markdown for formatting. Structure your answer with clear headings, subheadings, bullet points, and numbered lists to make it easy to read and understand. For example, a question about "bonds" should be broken down into sections like "Main Methods of Investing," "Types of Bonds," "Key Factors to Consider," and "Steps to Get Started."
+                        4.  **Citations**: If you use information from the web to answer, you MUST cite your sources.
+                        5.  **Context First**: Always use my personal financial context first if the question is about my spending.
+                        6.  **Formatting**: Use Markdown syntax for formatting (e.g., **bold** for emphasis, lists). Do not output raw HTML tags.
 
-                        Your Answer:
+                        My Question: "${userInput}"
                     `;
                     
+                    const config = {
+                        tools: [{ googleSearch: {} }, { googleMaps: {} }],
+                    };
+                    if (location) {
+                        config.toolConfig = {
+                            retrievalConfig: {
+                                latLng: {
+                                    latitude: location.latitude,
+                                    longitude: location.longitude,
+                                },
+                            },
+                        };
+                    }
+
                     const response = await ai.models.generateContent({
                         model: 'gemini-2.5-flash',
                         contents: prompt,
+                        config: config,
                     });
 
-                    thinkingMessage.textContent = response.text;
+                    const responseText = response.text;
+                    let renderedHtml = marked.parse(responseText || "Sorry, I couldn't generate a response.");
+
+                    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+                    if (groundingChunks && groundingChunks.length > 0) {
+                        const sources = groundingChunks.map(chunk => {
+                            if (chunk.web && chunk.web.uri) return { uri: chunk.web.uri, title: chunk.web.title || new URL(chunk.web.uri).hostname };
+                            if (chunk.maps && chunk.maps.uri) return { uri: chunk.maps.uri, title: chunk.maps.title || 'Google Maps Result' };
+                            return null;
+                        }).filter(Boolean);
+                        const uniqueSources = sources.filter((source, index, self) => index === self.findIndex((s) => s.uri === source.uri));
+                        if (uniqueSources.length > 0) {
+                            let sourcesHtml = '<div style="margin-top: 1.5rem; font-size: 0.8rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;"><strong>Sources:</strong><ul style="list-style-position: inside; padding-left: 0; margin-top: 0.25rem;">';
+                            uniqueSources.forEach(source => {
+                                sourcesHtml += `<li style="margin-top: 0.25rem;"><a href="${source.uri}" target="_blank" rel="noopener noreferrer" style="color: inherit;">${source.title}</a></li>`;
+                            });
+                            sourcesHtml += '</ul></div>';
+                            renderedHtml += sourcesHtml;
+                        }
+                    }
+                    
+                    finleyMessages[thinkingMessageIndex] = { sender: 'bot', html: renderedHtml };
+
                 } catch (error) {
                     console.error("Gemini API Error:", error);
-                    thinkingMessage.textContent = "Sorry, I'm having trouble connecting right now. Please check your API key or try again in a moment.";
-                    thinkingMessage.style.color = 'var(--text-danger)';
+                    const errorHtml = "<p style='color: var(--text-danger)'>Sorry, I'm having trouble connecting right now. Please check your API key or try again in a moment.</p>";
+                    finleyMessages[thinkingMessageIndex] = { sender: 'bot', html: errorHtml };
                 }
             }
 
+            async function sendFinleyMessage(userInput) {
+                if (!userInput) return;
+
+                // Add user message to shared state
+                finleyMessages.push({ sender: 'user', text: userInput });
+                saveChatHistory();
+                renderAllChatUIs();
+
+                await getGeneralFinleyResponse(userInput);
+                
+                saveChatHistory();
+                renderAllChatUIs();
+            }
+            
+            // Event Listeners for Chat
             chatForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const userInput = chatInput.value.trim();
-                if (userInput) {
-                    addChatMessage('user', userInput);
-                    chatInput.value = '';
-                    getBotResponse(userInput);
+                sendFinleyMessage(userInput);
+                chatInput.value = '';
+                chatSuggestions.classList.add('hidden');
+            });
+            chatSuggestions.addEventListener('click', (e) => {
+                const suggestionButton = e.target.closest('button');
+                if (suggestionButton) {
+                    sendFinleyMessage(suggestionButton.textContent);
+                    chatSuggestions.classList.add('hidden');
                 }
+            });
+
+            miniChatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userInput = miniChatInput.value.trim();
+                sendFinleyMessage(userInput);
+                miniChatInput.value = '';
             });
 
             function initializeCoach() {
                 if (!coachInitialized) {
-                    chatWindow.innerHTML = '';
-                    setTimeout(() => {
-                        addChatMessage('bot', `Hi ${currentUser.name}! I'm your AI Finance Coach. Ask me for advice on your current month's spending, or general topics like saving or credit scores.`);
-                    }, 500);
+                    if (!isSimulationActive) {
+                        chatSuggestions.classList.remove('hidden');
+                    }
+                    renderFullChat();
                     coachInitialized = true;
+                }
+            }
+            
+            // Event Listeners for Mini Chat Widget
+            finleyFab.addEventListener('click', () => finleyMiniChat.classList.toggle('hidden'));
+            miniChatCloseBtn.addEventListener('click', () => finleyMiniChat.classList.add('hidden'));
+            miniChatExpandBtn.addEventListener('click', () => {
+                finleyMiniChat.classList.add('hidden');
+                // Programmatically click the nav item to switch to the full view
+                document.querySelector('.nav-item[data-section="coach"]').click();
+            });
+
+            function initMiniChatWidget() {
+                const minimizeIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18px" height="18px"><path d="M19 13H5v-2h14v2z"/></svg>`;
+                const maximizeIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18px" height="18px"><path d="M3 15h2V9H3v6zm4 2h2V7H7v10zm4-12v14h2V5h-2zm4 10h2V9h-2v6zm4-4h2V9h-2v2zM3 15h2V9H3v6zm4 2h2V7H7v10zm4-12v14h2V5h-2zm4 10h2V9h-2v6zm4-4h2V9h-2v2z"/></svg>`; // Placeholder, a box icon would be better.
+                miniChatMinimizeBtn.innerHTML = minimizeIconSVG;
+
+                miniChatMinimizeBtn.addEventListener('click', () => {
+                    const isMinimized = finleyMiniChat.classList.toggle('minimized');
+                    miniChatMinimizeBtn.innerHTML = isMinimized ? maximizeIconSVG : minimizeIconSVG;
+                    miniChatMinimizeBtn.setAttribute('aria-label', isMinimized ? 'Maximize chat' : 'Minimize chat');
+                });
+                
+                const header = finleyMiniChat.querySelector('.mini-chat-header');
+                let isDragging = false;
+                let hasBeenDragged = false;
+                let offsetX, offsetY;
+
+                header.addEventListener('mousedown', (e) => {
+                    if (e.target.closest('button')) return; // Ignore clicks on buttons in the header
+                    isDragging = true;
+                    header.classList.add('dragging');
+
+                    if (!hasBeenDragged) {
+                        const rect = finleyMiniChat.getBoundingClientRect();
+                        finleyMiniChat.style.top = `${rect.top}px`;
+                        finleyMiniChat.style.left = `${rect.left}px`;
+                        finleyMiniChat.style.bottom = 'auto';
+                        finleyMiniChat.style.right = 'auto';
+                        hasBeenDragged = true;
+                    }
+                    
+                    offsetX = e.clientX - finleyMiniChat.offsetLeft;
+                    offsetY = e.clientY - finleyMiniChat.offsetTop;
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+
+                function onMouseMove(e) {
+                    if (!isDragging) return;
+                    let newLeft = e.clientX - offsetX;
+                    let newTop = e.clientY - offsetY;
+
+                    // Boundary checks
+                    const maxLeft = window.innerWidth - finleyMiniChat.offsetWidth;
+                    const maxTop = window.innerHeight - finleyMiniChat.offsetHeight;
+
+                    finleyMiniChat.style.left = `${Math.max(0, Math.min(newLeft, maxLeft))}px`;
+                    finleyMiniChat.style.top = `${Math.max(0, Math.min(newTop, maxTop))}px`;
+                }
+
+                function onMouseUp() {
+                    isDragging = false;
+                    header.classList.remove('dragging');
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
                 }
             }
 
 
             // ===================================
-            //  SIDEBAR & WHAT-IF SIMULATOR
+            //  SIDEBAR NAVIGATION
             // ===================================
             navItems.forEach(item => {
                 item.addEventListener('click', () => {
+                    // Prevent navigation during active chat simulation
+                    if (isSimulationActive) {
+                        alert("Please complete or cancel the current chat simulation before navigating away.");
+                        return;
+                    }
+                    
                     navItems.forEach(nav => nav.classList.remove('active'));
                     item.classList.add('active');
                     const sectionId = item.dataset.section + '-section';
                     contentSections.forEach(section => section.classList.toggle('active', section.id === sectionId));
+
                     if (item.dataset.section === 'coach') {
                         initializeCoach();
+                        finleyFab.classList.add('hidden'); // Hide FAB on full coach page
+                        finleyMiniChat.classList.add('hidden'); // Also hide panel
+                    } else {
+                        if (currentUser) finleyFab.classList.remove('hidden');
                     }
+
+                     if (item.dataset.section === 'what-if') {
+                        initializeSimulator();
+                     }
                 });
             });
 
-            // What-If Scenario Switching
-            scenarioSelectorBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Hide initial message
-                    simulatorInitialMsg.classList.add('hidden');
+            // ===================================
+            //  WHAT-IF SIMULATOR - NEW LOGIC
+            // ===================================
+            const scenarioGrid = document.getElementById('scenario-grid');
+            const scenarioGridContainer = document.getElementById('scenario-grid-container');
+            const simulatorPanel = document.getElementById('simulator-panel');
+            const simulatorInputForm = document.getElementById('simulator-input-form');
+            const simulatorInputsContainer = document.getElementById('simulator-inputs-container');
+            const simulatorPanelTitle = document.getElementById('simulator-panel-title');
+            const closeSimulatorPanelBtn = document.getElementById('close-simulator-panel-btn');
+            const cancelSimulatorBtn = document.getElementById('cancel-simulator-btn');
+            const simulatorResultsPanel = document.getElementById('simulator-results-panel');
+            const simulatorResultsContent = document.getElementById('simulator-results-content');
+            const simulatorResultsTitle = document.getElementById('simulator-results-title');
+            const backToScenariosBtn = document.getElementById('back-to-scenarios-btn');
+            
+            // Simulation Choice Modal elements
+            const simulationChoiceModal = document.getElementById('simulation-choice-modal');
+            const simulationChoiceTitle = document.getElementById('simulation-choice-title');
+            const closeSimulationChoiceBtn = document.getElementById('close-simulation-choice-btn');
+            const choiceQuickSimBtn = document.getElementById('choice-quick-sim');
+            const choiceChatSimBtn = document.getElementById('choice-chat-sim');
+            
+            // NEW Simulation Chat Modal elements
+            const simulationChatModal = document.getElementById('simulation-chat-modal');
+            const simulationChatTitle = document.getElementById('simulation-chat-title');
+            const closeSimulationChatBtn = document.getElementById('close-simulation-chat-btn');
+            const simulationChatMessages = document.getElementById('simulation-chat-messages');
+            const simulationChatForm = document.getElementById('simulation-chat-form');
+            const simulationChatInput = document.getElementById('simulation-chat-input');
 
-                    // Handle active button state
-                    scenarioSelectorBtns.forEach(b => {
-                        b.classList.remove('primary-button', 'active');
-                        b.classList.add('secondary-button');
-                    });
-                    btn.classList.add('primary-button', 'active');
-                    btn.classList.remove('secondary-button');
 
-                    // Show the correct simulator content
-                    const targetScenario = btn.dataset.scenario;
-                    simulatorContents.forEach(content => {
-                        content.classList.toggle('hidden', content.id !== `${targetScenario}-sim`);
-                    });
+            let currentScenario = null;
+            let isSimulationActive = false;
+            let simulationScenarioKey = null;
+            let simulationQuestionIndex = 0;
+            let simulationInputs = {};
+            let simulationChatMessagesState = [];
+            
+            const scenarios = {
+                'car-vs-uber': {
+                    title: "Car vs Uber",
+                    subtitle: "Compare the true cost of owning a car versus using Uber or Lyft for most of your rides.",
+                    accentColor: "var(--cat-transport)",
+                    questions: [
+                        { id: 'days_per_week', label: 'How many days per week do you usually need transportation?', type: 'number', placeholder: 5 },
+                        { id: 'trips_per_day', label: 'On those days, about how many trips per day?', type: 'number', placeholder: 2 },
+                        { id: 'avg_ride_cost', label: 'Average cost per Uber/Lyft ride in your area?', type: 'number', placeholder: 15 },
+                        { id: 'car_cost', label: 'If you bought a car, about how much would the car cost?', type: 'number', placeholder: 20000 },
+                        { id: 'gas_monthly', label: 'Estimated monthly costs for gas?', type: 'number', placeholder: 150 },
+                        { id: 'insurance_monthly', label: 'Estimated monthly insurance cost?', type: 'number', placeholder: 120 },
+                        { id: 'maintenance_monthly', label: 'Estimated monthly maintenance/parking/tolls?', type: 'number', placeholder: 80 },
+                        { id: 'ownership_years', label: 'How many years do you expect to keep the car?', type: 'number', placeholder: 5 },
+                        { id: 'priority', label: 'Which is more important to you right now?', type: 'select', options: ['Saving money', 'Convenience', 'Independence'] },
+                    ],
+                    calculate(inputs) {
+                        const i = { ...inputs }; // clone to avoid mutation
+                        for(const q of this.questions) {
+                           if(q.type === 'number') i[q.id] = parseFloat(i[q.id]);
+                        }
+                        const tripsPerMonth = i.days_per_week * i.trips_per_day * 4.33;
+                        const monthlyUberCost = tripsPerMonth * i.avg_ride_cost;
+                        const totalUberCost = monthlyUberCost * 12 * i.ownership_years;
+                        
+                        const monthlyCarPayment = i.car_cost / (i.ownership_years * 12);
+                        const monthlyCarCost = i.gas_monthly + i.insurance_monthly + i.maintenance_monthly + monthlyCarPayment;
+                        const totalCarCost = monthlyCarCost * 12 * i.ownership_years;
+
+                        return { monthlyUberCost, totalUberCost, monthlyCarCost, totalCarCost };
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: Car vs Uber.
+
+User inputs:
+- Days per week needing rides: ${inputs.days_per_week}
+- Trips per day: ${inputs.trips_per_day}
+- Average Uber cost per ride: ${formatCurrency(inputs.avg_ride_cost)}
+- Car price: ${formatCurrency(inputs.car_cost)}
+- Monthly gas: ${formatCurrency(inputs.gas_monthly)}
+- Monthly insurance: ${formatCurrency(inputs.insurance_monthly)}
+- Monthly maintenance/parking/tolls: ${formatCurrency(inputs.maintenance_monthly)}
+- Years they plan to keep the car: ${inputs.ownership_years}
+- Priority: ${inputs.priority}
+
+Computed results:
+- Estimated monthly Uber cost: ${formatCurrency(calculations.monthlyUberCost)}
+- Estimated total Uber cost over ${inputs.ownership_years} years: ${formatCurrency(calculations.totalUberCost)}
+- Estimated monthly car cost: ${formatCurrency(calculations.monthlyCarCost)}
+- Estimated total car cost over ${inputs.ownership_years} years: ${formatCurrency(calculations.totalCarCost)}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Explain in clear language how the numbers compare.
+2.  **Cost Comparison:** Provide a simple monthly and total cost comparison.
+3.  **Hidden Costs or Risks:** Highlight hidden costs (repairs, depreciation, surge pricing, etc.).
+4.  **Pros and Cons List:** Create a pros and cons list for each option.
+5.  **Recommendation:** Recommend an option FOR THIS USER based on their priority and data.
+6.  **Next Steps:** Give 2-3 simple next steps.
+Keep the tone conversational and encouraging. Use Markdown formatting.`;
+                    }
+                },
+                'rent-vs-parents': {
+                    title: "Renting vs Living With Parents",
+                    subtitle: "Weigh the trade-off between independence and savings by comparing rent to staying at home.",
+                    accentColor: "var(--cat-rent)",
+                    questions: [
+                        { id: 'rent_monthly', label: 'Monthly rent you are considering (including utilities)?', type: 'number', placeholder: 1800 },
+                        { id: 'parent_contribution_monthly', label: 'If you live with parents, how much would you contribute monthly?', type: 'number', placeholder: 400 },
+                        { id: 'extra_commute_cost_monthly', label: 'Extra commute cost if you live with parents (gas, transit) per month?', type: 'number', placeholder: 100 },
+                        { id: 'commute_time_hours_weekly', label: 'How many hours per week would you save or lose in commute time by renting?', type: 'number', placeholder: 5 },
+                        { id: 'independence_value', label: 'How much do you value independence on a scale of 1–5?', type: 'number', placeholder: 4, min: 1, max: 5 },
+                        { id: 'comparison_years', label: 'Over how many years do you want to compare the impact?', type: 'number', placeholder: 3 },
+                    ],
+                    calculate(inputs) {
+                        const i = { ...inputs };
+                        for(const q of this.questions) {
+                           if(q.type === 'number') i[q.id] = parseFloat(i[q.id]);
+                        }
+                        const monthlyRentCost = i.rent_monthly;
+                        const monthlyParentsCost = i.parent_contribution_monthly + i.extra_commute_cost_monthly;
+                        const totalRentCost = monthlyRentCost * 12 * i.comparison_years;
+                        const totalParentsCost = monthlyParentsCost * 12 * i.comparison_years;
+                        const savingsByStayingHome = (monthlyRentCost - monthlyParentsCost) * 12 * i.comparison_years;
+                        return { monthlyRentCost, monthlyParentsCost, totalRentCost, totalParentsCost, savingsByStayingHome };
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: Renting vs Living With Parents.
+
+User inputs:
+- Monthly rent considered: ${formatCurrency(inputs.rent_monthly)}
+- Monthly contribution to parents: ${formatCurrency(inputs.parent_contribution_monthly)}
+- Extra commute cost from parents' home: ${formatCurrency(inputs.extra_commute_cost_monthly)}
+- Commute time saved/lost per week by renting: ${inputs.commute_time_hours_weekly} hours
+- Value of independence (1-5): ${inputs.independence_value}
+- Comparison period: ${inputs.comparison_years} years
+
+Computed results:
+- Estimated monthly cost of renting: ${formatCurrency(calculations.monthlyRentCost)}
+- Estimated monthly cost of living with parents: ${formatCurrency(calculations.monthlyParentsCost)}
+- Total potential savings by staying home over ${inputs.comparison_years} years: ${formatCurrency(calculations.savingsByStayingHome)}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Explain the financial and non-financial trade-offs.
+2.  **Cost Comparison:** Provide a simple monthly and total cost comparison.
+3.  **Hidden Costs or Risks:** Highlight hidden costs (renter's insurance, setup costs vs. potential family friction).
+4.  **Pros and Cons List:** Create a pros and cons list for each option.
+5.  **Recommendation:** Recommend an option FOR THIS USER based on their value of independence and financial numbers.
+6.  **Next Steps:** Give 2-3 simple next steps (e.g., creating a savings plan for a deposit).
+Keep the tone conversational and encouraging. Use Markdown formatting.`;
+                    }
+                },
+                'student-loan-vs-paygo': {
+                    title: "Student Loan vs Pay-As-You-Go",
+                    subtitle: "Decide whether to borrow for school now or cash-flow your tuition semester by semester.",
+                    accentColor: "#f59e0b",
+                     questions: [
+                        { id: 'tuition_per_year', label: 'Total tuition per year (after scholarships/grants)?', type: 'number', placeholder: 20000 },
+                        { id: 'years_of_school', label: 'How many years of school do you have left?', type: 'number', placeholder: 4 },
+                        { id: 'pay_per_month', label: 'How much can you pay out of pocket per month while in school?', type: 'number', placeholder: 800 },
+                        { id: 'loan_apr', label: 'If you take loans, what interest rate do you expect (APR)?', type: 'number', placeholder: 6.5 },
+                        { id: 'repayment_years', label: 'How many years do you expect to take to pay off the loans after graduation?', type: 'number', placeholder: 10 },
+                        { id: 'debt_comfort', label: 'How comfortable are you with debt on a scale of 1–5?', type: 'number', placeholder: 2, min: 1, max: 5 },
+                     ],
+                    calculate(inputs) {
+                        const i = { ...inputs };
+                        for(const q of this.questions) {
+                           if(q.type === 'number') i[q.id] = parseFloat(i[q.id]);
+                        }
+                        const totalTuition = i.tuition_per_year * i.years_of_school;
+                        const totalPaidFromPocket = i.pay_per_month * 12 * i.years_of_school;
+                        const loanAmountNeeded = Math.max(0, totalTuition - totalPaidFromPocket);
+                        const interestRate = (i.loan_apr / 100) / 12;
+                        const n = i.repayment_years * 12;
+                        const monthlyLoanPayment = loanAmountNeeded > 0 ? loanAmountNeeded * (interestRate * Math.pow(1 + interestRate, n)) / (Math.pow(1 + interestRate, n) - 1) : 0;
+                        const totalLoanRepayment = monthlyLoanPayment * n;
+                        return { totalTuition, loanAmountNeeded, monthlyLoanPayment, totalLoanRepayment };
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: Student Loan vs Pay-As-You-Go.
+
+User inputs:
+- Tuition per year: ${formatCurrency(inputs.tuition_per_year)}
+- Years of school: ${inputs.years_of_school}
+- Can pay per month: ${formatCurrency(inputs.pay_per_month)}
+- Expected Loan APR: ${inputs.loan_apr}%
+- Repayment period: ${inputs.repayment_years} years
+- Debt comfort (1-5): ${inputs.debt_comfort}
+
+Computed results:
+- Total tuition cost: ${formatCurrency(calculations.totalTuition)}
+- Total loan amount needed: ${formatCurrency(calculations.loanAmountNeeded)}
+- Estimated monthly loan payment after graduation: ${formatCurrency(calculations.monthlyLoanPayment)}
+- Total amount repaid on loan: ${formatCurrency(calculations.totalLoanRepayment)}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Explain the trade-off between graduating with debt versus potentially slower progress.
+2.  **Cost Comparison:** Compare total cost of education for both paths.
+3.  **Hidden Costs or Risks:** Discuss opportunity cost of working more, interest capitalization, and career impact.
+4.  **Pros and Cons List:** Create a pros and cons list for each approach.
+5.  **Recommendation:** Recommend a path based on their debt comfort and financial inputs.
+6.  **Next Steps:** Give 2-3 next steps (e.g., applying for more scholarships, creating a strict in-school budget).
+Keep the tone conversational and encouraging. Use Markdown formatting.`;
+                    }
+                },
+                 'loan-types': {
+                    title: "Types of loans and what fits best for you",
+                    subtitle: "Get a personalized recommendation on which loan type matches your financial situation and goals.",
+                    accentColor: "var(--cat-bills)",
+                    questions: [
+                        { id: 'purpose', label: 'What is the primary purpose of this loan?', type: 'select', options: ['Buying a car', 'Education', 'Home improvement', 'Debt consolidation', 'Starting a business', 'Other major purchase'] },
+                        { id: 'amount', label: 'How much do you need to borrow?', type: 'number', placeholder: 15000 },
+                        { id: 'credit_score', label: 'What is your approximate credit score?', type: 'select', options: ['Excellent (750+)', 'Good (700-749)', 'Fair (650-699)', 'Needs Improvement (Below 650)'] },
+                        { id: 'priority', label: 'What is more important to you?', type: 'select', options: ['Lowest monthly payment', 'Lowest total cost over time', 'Flexibility in repayment'] },
+                    ],
+                    calculate(inputs) {
+                        return {};
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: Understanding Loan Types.
+
+User inputs:
+- Loan purpose: ${inputs.purpose}
+- Amount needed: ${formatCurrency(inputs.amount)}
+- Approximate credit score: ${inputs.credit_score}
+- User's priority: ${inputs.priority}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Briefly explain that the best loan type depends on the purpose, loan term, and credit score.
+2.  **Relevant Loan Types Explained:** Based on the user's stated purpose ('${inputs.purpose}'), describe 2-3 of the most relevant loan types. For example, for 'Buying a car', discuss auto loans and personal loans. For 'Education', discuss federal and private student loans.
+3.  **Key Terms Defined:** Clearly and simply define these essential terms: APR, Fixed vs. Variable Rate, Loan Term, and Secured vs. Unsecured Loan.
+4.  **How Your Situation Affects Your Options:** Explain how the user's credit score ('${inputs.credit_score}') and priority ('${inputs.priority}') will impact the interest rates they receive and which loan type might be better for them.
+5.  **Recommendation:** Based on all their inputs, recommend a specific type of loan or a strategy for them to pursue. For example: "For someone in your situation looking to buy a car with a good credit score, a secured auto loan from a credit union is likely your best bet."
+6.  **Next Steps:** Give 2-3 simple, actionable next steps. For example: "1. Check your credit report for free. 2. Get pre-qualified from at least three different lenders (e.g., your bank, a credit union, an online lender) to compare rates."
+
+Keep the tone educational, empowering, and easy to understand. Use Markdown formatting.`;
+                    }
+                },
+                'used-vs-new-car': {
+                    title: "Used Car vs New Car",
+                    subtitle: "See how depreciation, repairs, and financing affect the real price of your next car.",
+                    accentColor: "var(--cat-transport)",
+                    questions: [
+                        { id: 'used_price', label: 'Price of the used car you’re considering?', type: 'number', placeholder: 15000 },
+                        { id: 'new_price', label: 'Price of the new car you’re considering?', type: 'number', placeholder: 28000 },
+                        { id: 'used_repairs_annual', label: 'Expected annual repairs for the used car?', type: 'number', placeholder: 800 },
+                        { id: 'new_repairs_annual', label: 'Expected annual repairs for the new car (under warranty)?', type: 'number', placeholder: 100 },
+                        { id: 'used_resale', label: 'Expected trade-in or resale value after X years for the used car?', type: 'number', placeholder: 7000 },
+                        { id: 'new_resale', label: 'Expected trade-in or resale value after X years for the new car?', type: 'number', placeholder: 16000 },
+                        { id: 'ownership_years', label: 'How many years do you plan to keep the car?', type: 'number', placeholder: 5 },
+                        { id: 'features_importance', label: 'Is having the latest features important to you?', type: 'select', options: ['Yes', 'No', 'Somewhat'] },
+                    ],
+                    calculate(inputs) {
+                        const i = { ...inputs };
+                        for(const q of this.questions) {
+                           if(q.type === 'number') i[q.id] = parseFloat(i[q.id]);
+                        }
+                        const usedDepreciation = i.used_price - i.used_resale;
+                        const newDepreciation = i.new_price - i.new_resale;
+                        const usedTotalCost = i.used_price + (i.used_repairs_annual * i.ownership_years) - i.used_resale;
+                        const newTotalCost = i.new_price + (i.new_repairs_annual * i.ownership_years) - i.new_resale;
+                        return { usedTotalCost, newTotalCost, usedDepreciation, newDepreciation };
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: Used Car vs New Car.
+
+User inputs:
+- Used car price: ${formatCurrency(inputs.used_price)}
+- New car price: ${formatCurrency(inputs.new_price)}
+- Used car annual repairs: ${formatCurrency(inputs.used_repairs_annual)}
+- New car annual repairs: ${formatCurrency(inputs.new_repairs_annual)}
+- Used car resale value: ${formatCurrency(inputs.used_resale)}
+- New car resale value: ${formatCurrency(inputs.new_resale)}
+- Ownership years: ${inputs.ownership_years}
+- Importance of new features: ${inputs.features_importance}
+
+Computed results:
+- Total cost of ownership for Used Car (Price + Repairs - Resale): ${formatCurrency(calculations.usedTotalCost)}
+- Total cost of ownership for New Car (Price + Repairs - Resale): ${formatCurrency(calculations.newTotalCost)}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Explain the concept of total cost of ownership.
+2.  **Cost Comparison:** Compare the total cost over the ownership period.
+3.  **Hidden Costs or Risks:** Discuss financing differences, insurance costs, and unexpected major repairs for used cars.
+4.  **Pros and Cons List:** Create a pros and cons list for each.
+5.  **Recommendation:** Recommend an option based on their inputs, especially the importance of new features.
+6.  **Next Steps:** Give 2-3 next steps (e.g., getting a pre-purchase inspection for a used car).
+Keep the tone conversational and encouraging. Use Markdown formatting.`;
+                    }
+                },
+                'credit-vs-debit': {
+                    title: "Credit Card vs Debit Card for Daily Spending",
+                    subtitle: "Compare rewards and protections from credit cards against the safety of staying debit-only.",
+                    accentColor: "var(--cat-shopping)",
+                    questions: [
+                        { id: 'monthly_spending', label: 'Average monthly spending on everyday purchases?', type: 'number', placeholder: 1500 },
+                        { id: 'rewards_rate', label: 'If you used a credit card, what average rewards rate would you expect (in %)?', type: 'number', placeholder: 2 },
+                        { id: 'balance_paid', label: 'Do you usually pay your full balance each month or carry a balance?', type: 'select', options: ['Pay in full', 'Carry a balance'] },
+                        { id: 'apr', label: 'If you carry a balance, what is a realistic APR you might get?', type: 'number', placeholder: 21 },
+                        { id: 'overspending_history', label: 'Have you ever had issues with overspending on credit in the past?', type: 'select', options: ['Yes', 'No'] },
+                        { id: 'protections_importance', label: 'How important are purchase protections and travel benefits to you? (1-5 scale)', type: 'number', min:1, max:5, placeholder: 3 },
+                    ],
+                    calculate(inputs) {
+                        const i = { ...inputs };
+                        for(const q of this.questions) {
+                           if(q.type === 'number') i[q.id] = parseFloat(i[q.id]);
+                        }
+                        const annualRewards = i.monthly_spending * 12 * (i.rewards_rate / 100);
+                        const interestCost = (i.balance_paid === 'Carry a balance') ? 'Significant' : '$0';
+                        return { annualRewards, interestCost };
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: Credit Card vs Debit Card.
+
+User inputs:
+- Monthly spending: ${formatCurrency(inputs.monthly_spending)}
+- Expected rewards rate: ${inputs.rewards_rate}%
+- Balance payment habit: ${inputs.balance_paid}
+- Credit Card APR: ${inputs.apr}%
+- History of overspending: ${inputs.overspending_history}
+- Importance of protections: ${inputs.protections_importance}/5
+
+Computed results:
+- Potential annual rewards from credit card: ${formatCurrency(calculations.annualRewards)}
+- Potential annual interest cost if balance is carried: ${calculations.interestCost}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Explain the core difference: credit is borrowing, debit is spending your own money.
+2.  **Cost Comparison:** Compare potential rewards vs. potential interest costs.
+3.  **Hidden Costs or Risks:** Discuss annual fees, late fees, and the risk of debt accumulation vs. fraud liability on debit.
+4.  **Pros and Cons List:** Create a pros and cons list for using each card type for daily spending.
+5.  **Recommendation:** Recommend a strategy based on their spending habits and history.
+6.  **Next Steps:** Give 2-3 next steps (e.g., setting up auto-pay, starting with a secured card).
+Keep the tone conversational and encouraging. Use Markdown formatting.`;
+                    }
+                },
+                'hysa-vs-investing': {
+                    title: "High-Yield Savings vs Investing",
+                    subtitle: "Understand the trade-off between safety and growth when deciding where to park your money.",
+                    accentColor: "var(--text-success)",
+                    questions: [
+                        { id: 'amount', label: 'How much money are you deciding where to put?', type: 'number', placeholder: 10000 },
+                        { id: 'time_horizon', label: 'Time horizon (how many years until you likely need this money)?', type: 'number', placeholder: 5 },
+                        { id: 'hysa_apy', label: 'Estimated APY for a high-yield savings account?', type: 'number', placeholder: 4.5 },
+                        { id: 'investing_return', label: 'Estimated average annual return you might expect from investing?', type: 'number', placeholder: 8 },
+                        { id: 'risk_tolerance', label: 'How would you feel if the value drops 20% in a bad year?', type: 'select', options: ['Very stressed', 'Uncomfortable but okay', 'I can handle it'] },
+                        { id: 'goal', label: 'Is this money for an emergency fund or a long-term goal?', type: 'select', options: ['Emergency fund', 'Long-term goal'] },
+                    ],
+                    calculate(inputs) {
+                         const i = { ...inputs };
+                        for(const q of this.questions) {
+                           if(q.type === 'number') i[q.id] = parseFloat(i[q.id]);
+                        }
+                        const hysa_end_value = i.amount * Math.pow((1 + (i.hysa_apy / 100)), i.time_horizon);
+                        const investing_end_value = i.amount * Math.pow((1 + (i.investing_return / 100)), i.time_horizon);
+                        return { hysa_end_value, investing_end_value };
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: High-Yield Savings vs Investing.
+
+User inputs:
+- Amount: ${formatCurrency(inputs.amount)}
+- Time horizon: ${inputs.time_horizon} years
+- HYSA APY: ${inputs.hysa_apy}%
+- Estimated investment return: ${inputs.investing_return}%
+- Risk tolerance: ${inputs.risk_tolerance}
+- Goal: ${inputs.goal}
+
+Computed results:
+- Estimated value after ${inputs.time_horizon} years in HYSA: ${formatCurrency(calculations.hysa_end_value)}
+- Estimated value after ${inputs.time_horizon} years investing: ${formatCurrency(calculations.investing_end_value)}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Explain the fundamental trade-off between risk and return.
+2.  **Cost Comparison:** Compare the potential end values.
+3.  **Hidden Costs or Risks:** Discuss inflation risk for savings and market volatility for investing.
+4.  **Pros and Cons List:** Create a pros and cons list for each option.
+5.  **Recommendation:** Recommend a path based on their time horizon, goal, and risk tolerance.
+6.  **Next Steps:** Give 2-3 next steps (e.g., building a 3-6 month emergency fund first).
+Keep the tone conversational and encouraging. Use Markdown formatting.`;
+                    }
+                },
+                'community-vs-university': {
+                    title: "Community College First vs 4-Year University",
+                    subtitle: "Estimate how much you can save by starting at a community college and transferring later.",
+                    accentColor: "#f59e0b",
+                    questions: [
+                         { id: 'university_tuition', label: 'Annual tuition + fees at the 4-year university?', type: 'number', placeholder: 25000 },
+                         { id: 'community_tuition', label: 'Annual tuition + fees at the community college?', type: 'number', placeholder: 5000 },
+                         { id: 'years_at_community', label: 'How many years at community college before transferring?', type: 'number', placeholder: 2 },
+                         { id: 'total_years', label: 'How many total years to complete your degree?', type: 'number', placeholder: 4 },
+                         { id: 'scholarships_per_year', label: 'How much support do you have from scholarships/grants per year?', type: 'number', placeholder: 3000 },
+                         { id: 'work_ease', label: 'Will working part-time be easier at community college, university, or similar?', type: 'select', options: ['Easier at community college', 'Easier at university', 'About the same'] },
+                         { id: 'networking_importance', label: 'How important are campus experience and networking to you? (1-5 scale)', type: 'number', min:1, max:5, placeholder: 3 },
+                    ],
+                    calculate(inputs) {
+                         const i = { ...inputs };
+                        for(const q of this.questions) {
+                           if(q.type === 'number') i[q.id] = parseFloat(i[q.id]);
+                        }
+                        const netUniTuition = i.university_tuition - i.scholarships_per_year;
+                        const netCommTuition = i.community_tuition - i.scholarships_per_year;
+                        const universityDirectCost = netUniTuition * i.total_years;
+                        const communityPathCost = (netCommTuition * i.years_at_community) + (netUniTuition * (i.total_years - i.years_at_community));
+                        const savings = universityDirectCost - communityPathCost;
+                        return { universityDirectCost, communityPathCost, savings };
+                    },
+                    getAiPrompt(inputs, calculations) {
+                        return `Act as a friendly, practical financial coach.
+Scenario: Community College First vs 4-Year University.
+
+User inputs:
+- 4-year university annual tuition: ${formatCurrency(inputs.university_tuition)}
+- Community college annual tuition: ${formatCurrency(inputs.community_tuition)}
+- Years at community college: ${inputs.years_at_community}
+- Total years to degree: ${inputs.total_years}
+- Annual scholarships: ${formatCurrency(inputs.scholarships_per_year)}
+- Ease of working: ${inputs.work_ease}
+- Importance of campus experience/networking: ${inputs.networking_importance}/5
+
+Computed results:
+- Total cost of starting at 4-year university: ${formatCurrency(calculations.universityDirectCost)}
+- Total cost of community college path: ${formatCurrency(calculations.communityPathCost)}
+- Total potential savings: ${formatCurrency(calculations.savings)}
+
+Your Tasks (follow this structure):
+1.  **Summary Paragraph:** Explain the financial benefits versus the potential social/networking trade-offs.
+2.  **Cost Comparison:** Clearly state the total cost for both paths and the potential savings.
+3.  **Hidden Costs or Risks:** Discuss credit transfer issues, differences in resources, and potential for delayed graduation.
+4.  **Pros and Cons List:** Create a pros and cons list for each educational path.
+5.  **Recommendation:** Recommend a path based on their priorities (cost vs. experience).
+6.  **Next Steps:** Give 2-3 next steps (e.g., checking articulation agreements between colleges).
+Keep the tone conversational and encouraging. Use Markdown formatting.`;
+                    }
+                }
+            };
+
+            function initializeSimulator() {
+                scenarioGrid.innerHTML = '';
+                for (const [key, scenario] of Object.entries(scenarios)) {
+                    const card = document.createElement('div');
+                    card.className = 'scenario-card';
+                    card.dataset.scenario = key;
+                    card.innerHTML = `
+                        <h4>${scenario.title}</h4>
+                        <p>${scenario.subtitle}</p>
+                        <div class="card-button-area">Start Scenario &rarr;</div>
+                        <div class="card-accent-line" style="background-color: ${scenario.accentColor};"></div>
+                    `;
+                    scenarioGrid.appendChild(card);
+                }
+            }
+            
+            function resetSimulationState() {
+                isSimulationActive = false;
+                simulationScenarioKey = null;
+                simulationQuestionIndex = 0;
+                simulationInputs = {};
+                simulationChatMessagesState = [];
+            }
+
+            function openSimulatorPanel(scenarioKey) {
+                currentScenario = scenarioKey;
+                const scenario = scenarios[scenarioKey];
+                simulatorPanelTitle.textContent = scenario.title;
+                simulatorInputsContainer.innerHTML = '';
+
+                scenario.questions.forEach(q => {
+                    let inputHtml = '';
+                    if (q.type === 'select') {
+                        const optionsHtml = q.options.map(o => `<option value="${o}">${o}</option>`).join('');
+                        inputHtml = `<select id="sim-input-${q.id}" class="sim-input" required>${optionsHtml}</select>`;
+                    } else {
+                        inputHtml = `<input type="${q.type}" id="sim-input-${q.id}" class="sim-input" placeholder="${q.placeholder || ''}" ${q.min ? `min="${q.min}"` : ''} ${q.max ? `max="${q.max}"` : ''} required>`;
+                    }
+                    const formGroup = document.createElement('div');
+                    formGroup.className = 'form-group';
+                    formGroup.innerHTML = `<label for="sim-input-${q.id}">${q.label}</label>${inputHtml}`;
+                    simulatorInputsContainer.appendChild(formGroup);
                 });
+
+                simulatorPanel.classList.remove('hidden');
+            }
+            
+            function closeSimulatorPanel() {
+                simulatorPanel.classList.add('hidden');
+                simulatorInputForm.reset();
+                currentScenario = null;
+            }
+
+            scenarioGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.scenario-card');
+                if (card && card.dataset.scenario) {
+                    currentScenario = card.dataset.scenario;
+                    const scenario = scenarios[currentScenario];
+                    simulationChoiceTitle.textContent = `Scenario: ${scenario.title}`;
+                    simulationChoiceModal.classList.remove('hidden');
+                }
             });
 
-            // Car vs Uber Logic
-            document.getElementById('car-vs-uber-form').addEventListener('submit', (e) => {
+            closeSimulatorPanelBtn.addEventListener('click', closeSimulatorPanel);
+            cancelSimulatorBtn.addEventListener('click', closeSimulatorPanel);
+
+            simulatorInputForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const rides = parseFloat(document.getElementById('sim-uber-rides').value);
-                const cost = parseFloat(document.getElementById('sim-uber-cost').value);
-                const carPrice = parseFloat(document.getElementById('sim-car-price').value);
-                const gas = parseFloat(document.getElementById('sim-gas').value);
-                const insurance = parseFloat(document.getElementById('sim-insurance').value);
-                const maintenance = parseFloat(document.getElementById('sim-maintenance').value);
-                const years = parseFloat(document.getElementById('sim-years').value);
+                const scenarioKey = currentScenario; 
+                const scenario = scenarios[scenarioKey];
 
-                const monthlyUber = rides * cost * 4.33;
-                const totalUber = monthlyUber * 12 * years;
-                const monthlyCar = (carPrice / (years * 12)) + gas + insurance + maintenance;
-                const totalCar = monthlyCar * 12 * years;
+                if (!scenario) {
+                    console.error("No scenario selected for simulation.");
+                    return;
+                }
                 
-                document.getElementById('sim-uber-total').textContent = formatCurrency(totalUber);
-                document.getElementById('sim-uber-monthly').textContent = `${formatCurrency(monthlyUber)} / month`;
-                document.getElementById('sim-car-total').textContent = formatCurrency(totalCar);
-                document.getElementById('sim-car-monthly').textContent = `${formatCurrency(monthlyCar)} / month`;
-                document.getElementById('car-sim-recommendation').innerHTML = totalUber < totalCar ? `<strong>Recommendation:</strong> Using <strong>Uber is cheaper</strong> by ${formatCurrency(totalCar - totalUber)} over ${years} years.` : `<strong>Recommendation:</strong> <strong>Owning a car is cheaper</strong> by ${formatCurrency(totalUber - totalCar)} over ${years} years.`;
-                document.getElementById('car-sim-results-container').classList.remove('hidden');
-                document.getElementById('car-sim-initial-msg').classList.add('hidden');
-            });
-
-            // Rent vs Buy Logic
-            document.getElementById('rent-vs-buy-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const monthlyRent = parseFloat(document.getElementById('sim-rent-monthly').value);
-                const homePrice = parseFloat(document.getElementById('sim-buy-price').value);
-                const downPaymentPercent = parseFloat(document.getElementById('sim-buy-down').value);
-                const interestRate = parseFloat(document.getElementById('sim-buy-interest').value);
-                const taxRate = parseFloat(document.getElementById('sim-buy-tax').value);
-                const maintenance = parseFloat(document.getElementById('sim-buy-maint').value);
-                const appreciationRate = parseFloat(document.getElementById('sim-buy-apprec').value);
-                const years = parseFloat(document.getElementById('sim-buy-years').value);
-
-                const totalRentCost = monthlyRent * 12 * years;
-
-                const downPayment = homePrice * (downPaymentPercent / 100);
-                const loanAmount = homePrice - downPayment;
-                const monthlyInterest = interestRate / 100 / 12;
-                const numPayments = years * 12;
-                const mortgagePayment = loanAmount * (monthlyInterest * Math.pow(1 + monthlyInterest, numPayments)) / (Math.pow(1 + monthlyInterest, numPayments) - 1);
+                const inputs = {};
+                scenario.questions.forEach(q => {
+                    const inputEl = document.getElementById(`sim-input-${q.id}`);
+                    inputs[q.id] = inputEl.type === 'number' ? parseFloat(inputEl.value) : inputEl.value;
+                });
                 
-                const totalMortgage = mortgagePayment * numPayments;
-                const totalTax = (homePrice * (taxRate / 100)) * years;
-                const totalMaintenance = maintenance * years;
-                const totalBuyCost = downPayment + totalMortgage + totalTax + totalMaintenance;
+                closeSimulatorPanel();
+                scenarioGridContainer.classList.add('hidden');
+                simulatorResultsPanel.classList.remove('hidden');
+                simulatorResultsTitle.textContent = `AI Analysis: ${scenario.title}`;
+                simulatorResultsContent.innerHTML = `<p>Analyzing your scenario with AI... 🧠</p>`;
 
-                const futureHomeValue = homePrice * Math.pow(1 + appreciationRate / 100, years);
-                const netBuyCost = totalBuyCost - futureHomeValue;
-                
-                document.getElementById('sim-rent-total').textContent = formatCurrency(totalRentCost);
-                document.getElementById('sim-buy-total').textContent = formatCurrency(netBuyCost);
-                document.getElementById('rent-sim-recommendation').innerHTML = totalRentCost < netBuyCost ? `<strong>Recommendation:</strong> <strong>Renting is cheaper</strong> by ${formatCurrency(netBuyCost - totalRentCost)} over ${years} years.` : `<strong>Recommendation:</strong> <strong>Buying is cheaper</strong> by ${formatCurrency(totalRentCost - netBuyCost)} over ${years} years, considering equity gained.`;
-                document.getElementById('rent-sim-results-container').classList.remove('hidden');
-                document.getElementById('rent-sim-initial-msg').classList.add('hidden');
+                await getAIAnalysis(scenarioKey, inputs);
             });
             
-            // Loan Comparison Logic
-            document.getElementById('loan-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const loanAmount = parseFloat(document.getElementById('sim-loan-amount').value);
-                const rateA = parseFloat(document.getElementById('sim-loan-a-rate').value);
-                const termA = parseFloat(document.getElementById('sim-loan-a-term').value);
-                const rateB = parseFloat(document.getElementById('sim-loan-b-rate').value);
-                const termB = parseFloat(document.getElementById('sim-loan-b-term').value);
-
-                const calculateLoan = (principal, annualRate, years) => {
-                    const monthlyRate = annualRate / 100 / 12;
-                    const numPayments = years * 12;
-                    const monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
-                    const totalPaid = monthlyPayment * numPayments;
-                    const totalInterest = totalPaid - principal;
-                    return { monthlyPayment, totalInterest };
-                };
-                
-                const loanA = calculateLoan(loanAmount, rateA, termA);
-                const loanB = calculateLoan(loanAmount, rateB, termB);
-                
-                document.getElementById('loan-a-monthly').textContent = `${formatCurrency(loanA.monthlyPayment)}/mo`;
-                document.getElementById('loan-a-total-interest').textContent = `${formatCurrency(loanA.totalInterest)} total interest`;
-                document.getElementById('loan-b-monthly').textContent = `${formatCurrency(loanB.monthlyPayment)}/mo`;
-                document.getElementById('loan-b-total-interest').textContent = `${formatCurrency(loanB.totalInterest)} total interest`;
-                
-                let recommendation = `Loan A has a lower monthly payment, but you'll pay more interest over time. Loan B has a higher payment but costs less overall. `;
-                if(loanA.totalInterest < loanB.totalInterest) {
-                    recommendation += '<strong>Loan A is the cheaper option</strong> in the long run.';
-                } else {
-                    recommendation += '<strong>Loan B is the cheaper option</strong> in the long run.';
-                }
-                document.getElementById('loan-sim-recommendation').innerHTML = recommendation;
-                document.getElementById('loan-sim-results-container').classList.remove('hidden');
-                document.getElementById('loan-sim-initial-msg').classList.add('hidden');
+            backToScenariosBtn.addEventListener('click', () => {
+                simulatorResultsPanel.classList.add('hidden');
+                scenarioGridContainer.classList.remove('hidden');
+                simulatorResultsContent.innerHTML = '';
             });
+            
+            // New Simulation Choice Logic
+            function closeChoiceModal() {
+                simulationChoiceModal.classList.add('hidden');
+            }
+            closeSimulationChoiceBtn.addEventListener('click', closeChoiceModal);
+            
+            choiceQuickSimBtn.addEventListener('click', () => {
+                closeChoiceModal();
+                openSimulatorPanel(currentScenario);
+            });
+
+            choiceChatSimBtn.addEventListener('click', () => {
+                closeChoiceModal();
+                startChatSimulation(currentScenario);
+            });
+
+
+            async function getAIAnalysis(scenarioKey, inputs) {
+                if (!ai) {
+                    simulatorResultsContent.innerHTML = `<p style="color: var(--text-danger)">AI features are not available. Please check your API key.</p>`;
+                    return;
+                }
+                
+                const scenario = scenarios[scenarioKey];
+                if (!scenario || typeof scenario.calculate !== 'function' || typeof scenario.getAiPrompt !== 'function') {
+                    console.error(`Scenario "${scenarioKey}" is not properly defined.`);
+                    simulatorResultsContent.innerHTML = `<p style="color: var(--text-danger)">An internal error occurred: the selected scenario is not configured correctly.</p>`;
+                    return;
+                }
+                const calculations = scenario.calculate(inputs);
+                const prompt = scenario.getAiPrompt(inputs, calculations);
+
+                try {
+                     const response = await ai.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: prompt
+                    });
+                    
+                    const responseText = response.text;
+                    if (responseText && responseText.trim() !== '') {
+                         simulatorResultsContent.innerHTML = marked.parse(responseText);
+                    } else {
+                        simulatorResultsContent.innerHTML = `<p>The AI returned an empty analysis. This could be due to safety filters or the complexity of the request. Please try rephrasing your inputs.</p>`;
+                    }
+                } catch (error) {
+                    console.error("Simulator AI Error:", error);
+                    simulatorResultsContent.innerHTML = `<p style="color: var(--text-danger)">Sorry, I encountered an error while generating your analysis. This could be due to a network issue or an API problem. Please try again.</p>`;
+                }
+            }
+            
+            // NEW & REFACTORED Chat-Based Simulation Functions
+            function renderSimulationChat() {
+                simulationChatMessages.innerHTML = '';
+                simulationChatMessagesState.forEach(msg => {
+                    const messageEl = document.createElement('div');
+                    messageEl.className = `chat-message ${msg.sender}-message`;
+                    if (msg.sender === 'user') {
+                        messageEl.textContent = msg.text;
+                    } else {
+                        messageEl.innerHTML = msg.html;
+                    }
+                    simulationChatMessages.appendChild(messageEl);
+                });
+                simulationChatMessages.scrollTop = simulationChatMessages.scrollHeight;
+            }
+
+            function addSimBotMessage(html) {
+                simulationChatMessagesState.push({ sender: 'bot', html });
+                renderSimulationChat();
+            }
+
+            function startChatSimulation(scenarioKey) {
+                resetSimulationState(); 
+                isSimulationActive = true;
+                simulationScenarioKey = scenarioKey;
+                
+                const scenario = scenarios[scenarioKey];
+                simulationChatTitle.textContent = `Sim: ${scenario.title}`;
+                
+                addSimBotMessage(`Great! Let's start the "${scenario.title}" simulation. I'll ask you a few questions. You can also ask me for clarification at any point, or type 'cancel' to stop.`);
+                
+                simulationChatModal.classList.remove('hidden');
+                askNextSimulationQuestion();
+            }
+
+            function askNextSimulationQuestion() {
+                const scenario = scenarios[simulationScenarioKey];
+                const question = scenario.questions[simulationQuestionIndex];
+
+                let questionHtml = question.label;
+                if (question.type === 'select' && question.options) {
+                    const optionsList = question.options.map(opt => `<li>${opt}</li>`).join('');
+                    questionHtml += `<br><br>Your options are:<ul>${optionsList}</ul>`;
+                }
+                addSimBotMessage(questionHtml);
+            }
+
+            async function handleSimulationInput(userInput) {
+                if (userInput.toLowerCase() === 'cancel' || userInput.toLowerCase() === 'exit') {
+                    addSimBotMessage("Simulation cancelled. Closing this window.");
+                    setTimeout(() => closeSimulationChat(), 2000);
+                    resetSimulationState();
+                    return;
+                }
+                
+                const scenario = scenarios[simulationScenarioKey];
+                const currentQuestion = scenario.questions[simulationQuestionIndex];
+                
+                // --- VALIDATION LOGIC ---
+                let isValid = true;
+                let validationMessage = "";
+                let processedInput = userInput;
+
+                if (currentQuestion.type === 'number') {
+                    const num = parseFloat(userInput);
+                    if (isNaN(num)) {
+                        isValid = false;
+                        validationMessage = "That doesn't look like a valid number. Please provide a number (e.g., 5, 150, 20000).";
+                    } else {
+                        processedInput = num;
+                    }
+                } else if (currentQuestion.type === 'select') {
+                    const foundOption = currentQuestion.options.find(opt => opt.toLowerCase() === userInput.toLowerCase().trim());
+                    if (!foundOption) {
+                        isValid = false;
+                        validationMessage = `Please choose one of the available options. Just type the option you want.`;
+                    } else {
+                        processedInput = foundOption; // Use the correctly cased option
+                    }
+                }
+                // --- END VALIDATION ---
+
+                const isFollowUpQuestion = !isValid && /(what|how|why|explain|average|who|where|when)/i.test(userInput);
+                
+                if (!isValid && !isFollowUpQuestion) {
+                    addSimBotMessage(validationMessage);
+                    return; // Re-ask the same question
+                }
+                
+                if (isFollowUpQuestion) {
+                    addSimBotMessage("Thinking...");
+                    const thinkingMessageIndex = simulationChatMessagesState.length - 1;
+
+                    const prompt = `You are Finley, a helpful AI assistant. You are in the middle of collecting information for a "${scenario.title}" simulation. The user has a follow-up question about the information you requested.
+
+                    The question you just asked the user was: "${currentQuestion.label}"
+                    The user's follow-up question is: "${userInput}"
+
+                    Your Task:
+                    1. Answer the user's follow-up question concisely and helpfully.
+                    2. After your answer, gently prompt them again for the original piece of information. For example, end with "With that in mind, what would you like to enter for the ${currentQuestion.label.toLowerCase()}?"`;
+                    
+                     try {
+                        const response = await ai.models.generateContent({model: 'gemini-2.5-flash', contents: prompt});
+                        simulationChatMessagesState[thinkingMessageIndex] = { sender: 'bot', html: marked.parse(response.text) };
+                        renderSimulationChat();
+                    } catch (error) {
+                        console.error("Follow-up question error", error);
+                        simulationChatMessagesState[thinkingMessageIndex] = { sender: 'bot', html: "Sorry, I had trouble with that question. Let's try answering the original question: " + currentQuestion.label };
+                        renderSimulationChat();
+                    }
+                } else {
+                    // Answer is valid, store it
+                    simulationInputs[currentQuestion.id] = processedInput;
+                    simulationQuestionIndex++;
+                    
+                    if (simulationQuestionIndex < scenario.questions.length) {
+                        askNextSimulationQuestion();
+                    } else {
+                        addSimBotMessage("Great, I have all the information I need. Analyzing your scenario now... 🧠");
+                        await runAndDisplayChatAnalysis();
+                        addSimBotMessage("This simulation is complete! You can close this window now or type 'cancel'.");
+                    }
+                }
+            }
+
+            async function runAndDisplayChatAnalysis() {
+                const scenarioKey = simulationScenarioKey;
+                const inputs = simulationInputs;
+                const scenario = scenarios[scenarioKey];
+                if (!scenario) {
+                    addSimBotMessage("<p>An internal error occurred. I've lost track of the simulation.</p>");
+                    return;
+                }
+                
+                try {
+                    const calculations = scenario.calculate(inputs);
+                    const prompt = scenario.getAiPrompt(inputs, calculations);
+                    const response = await ai.models.generateContent({model: 'gemini-2.5-flash', contents: prompt});
+                    
+                    if (response.text && response.text.trim() !== '') {
+                        addSimBotMessage(marked.parse(response.text));
+                    } else {
+                        addSimBotMessage("<p>The AI returned an empty analysis. This could be due to safety filters. The simulation is now complete.</p>");
+                    }
+                } catch (error) {
+                    console.error("Chat Simulation AI Error:", error);
+                    addSimBotMessage("<p style='color: var(--text-danger)'>Sorry, I encountered an error during the final analysis. The simulation has ended. Please try again later.</p>");
+                }
+            }
+            
+            function closeSimulationChat() {
+                simulationChatModal.classList.add('hidden');
+                resetSimulationState();
+            }
+            
+            simulationChatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userInput = simulationChatInput.value.trim();
+                if (!userInput) return;
+
+                simulationChatMessagesState.push({ sender: 'user', text: userInput });
+                renderSimulationChat();
+                simulationChatInput.value = '';
+                handleSimulationInput(userInput);
+            });
+            closeSimulationChatBtn.addEventListener('click', closeSimulationChat);
 
 
             initAuth();
+            initMiniChatWidget();
         });
     </script>
 </body>

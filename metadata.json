@@ -1,5 +1,7 @@
 {
-  "name": "SpendSmart - Your Personal Finance Coach",
+  "name": "Finova - Your Personal Finance Coach",
   "description": "A modern, single-page finance education web app to help users analyze spending, get financial advice, and simulate decisions. Built with vanilla HTML, CSS, and JavaScript.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }
